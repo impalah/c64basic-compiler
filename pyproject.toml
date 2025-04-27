@@ -1,6 +1,6 @@
 [project]
 name = "c64basic_compiler"
-version = "0.1.0"
+version = "0.1.1"
 description = "Commodore 64 basic compiler"
 authors = [
     {name = "Linus", email = "impalah@gmail.com"}
@@ -57,5 +57,7 @@ dev = [
     "sphinx-rtd-theme>=3.0.2",
 ]
 
+[project.scripts]
+build = "c64basic_compiler.build:main"
 
 
