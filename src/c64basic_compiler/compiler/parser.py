@@ -1,4 +1,4 @@
-def parse(tokens):
+def parse(tokens: list[tuple[int, list[str]]]) -> list[dict[str, any]]:
     """Parses a list of tokens into an abstract syntax tree (AST).
     This function takes a list of tokens, each represented as a tuple containing
     the line number and the command with its arguments. It converts these tokens

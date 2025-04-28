@@ -1,4 +1,4 @@
-def write_prg(filename, binary_data):
+def write_prg(filename: str, binary_data: bytes) -> None:
     """Writes binary data to a PRG file.
     The first two bytes of the file are set to 0x0801, which is the
     starting address for BASIC programs on the Commodore 64. The

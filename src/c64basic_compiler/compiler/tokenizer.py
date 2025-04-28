@@ -1,4 +1,4 @@
-def tokenize(source):
+def tokenize(source: str) -> list[tuple[int, list[str]]]:
     """Tokenizes a BASIC source code string.
     This function takes a string containing BASIC code, splits it into lines,
     and tokenizes each line into a list of tuples. Each tuple contains the line
