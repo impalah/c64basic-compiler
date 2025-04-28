@@ -7,9 +7,10 @@ Returns:
 import argparse
 import os
 import sys
+
 import c64basic_compiler.common.basic_tokens as basic_tokens
 
-basic_tokens = {
+basic_tokens: dict[str, int] = {
     "END": basic_tokens.END,
     "FOR": basic_tokens.FOR,
     "NEXT": basic_tokens.NEXT,
@@ -88,7 +89,7 @@ basic_tokens = {
 }
 
 
-def tokenize_line(line):
+def tokenize_line(line: str):
     """Tokenizes a line of BASIC code.
 
     Args:
@@ -152,7 +153,7 @@ def convert_bas_to_prg(input_file, output_file, force=False):
             print("Operation cancelled.")
             sys.exit(1)
 
-    with open(input_file, "r") as f:
+    with open(input_file) as f:
         lines = f.readlines()
 
     prg = bytearray()
@@ -175,8 +176,10 @@ def convert_bas_to_prg(input_file, output_file, force=False):
     print(f"PRG file created successfully: {output_file}")
 
 
-def main():
-    """Main function to handle command line arguments and call the conversion function."""
+def main() -> None:
+    """Main function to handle command line arguments
+    and call the conversion function.
+    """
     parser = argparse.ArgumentParser(description="BAS to PRG converter for C64.")
     parser.add_argument("-i", "--input", required=True, help="Input .bas file")
     parser.add_argument("-o", "--output", required=True, help="Output .prg file")

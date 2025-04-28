@@ -1,3 +1,5 @@
+from typing import Any
+
 # def parse(tokens: list[tuple[int, list[str]]]) -> list[dict[str, any]]:
 #     """Parses a list of tokens into an abstract syntax tree (AST).
 #     This function takes a list of tokens, each represented as a tuple containing
@@ -34,7 +36,7 @@
 #     return ast
 
 
-def parse(tokens: list[tuple[int, list[str]]]) -> list[dict[str, any]]:
+def parse(tokens: list[tuple[int, list[str]]]) -> list[dict[str, Any]]:
     """Parses a list of tokens into an abstract syntax tree (AST).
     This function takes a list of tokens, each represented as a tuple containing
     the line number and the command with its arguments. It converts these tokens
@@ -68,11 +70,12 @@ def parse(tokens: list[tuple[int, list[str]]]) -> list[dict[str, any]]:
         command = parts[0].upper()
         args = parts[1:]
 
+        # TODO: change comparison to use the basic tokens
         if command in ["PRINT", "GOTO", "END", "REM", "LET"]:
             ast.append({"line": lineno, "command": command, "args": args})
         elif command[0].isalpha():
-            # Parece una variable --> asignación directa
+            # It looks like a variable --> direct assign
             ast.append({"line": lineno, "command": "LET", "args": [command] + args})
         else:
-            raise Exception(f"Línea {lineno}: Comando desconocido {command}")
+            raise Exception(f"Line {lineno}: Unknown command {command}")
     return ast

@@ -1,13 +1,14 @@
-import sys
-import os
 import argparse
-from c64basic_compiler.compiler.tokenizer import tokenize
-from c64basic_compiler.compiler.parser import parse
+import os
+import sys
+
 from c64basic_compiler.compiler.codegen import generate_code
+from c64basic_compiler.compiler.parser import parse
 from c64basic_compiler.compiler.prg_writer import write_prg
+from c64basic_compiler.compiler.tokenizer import tokenize
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="BASIC Compiler for  C64 (C64BASIC Compiler)."
     )
@@ -42,7 +43,7 @@ def main():
             print("Operation cancelled.")
             sys.exit(1)
 
-    with open(input_file, "r") as f:
+    with open(input_file) as f:
         source = f.read()
 
     tokens = tokenize(source)

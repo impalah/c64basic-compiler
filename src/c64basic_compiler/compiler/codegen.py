@@ -1,23 +1,21 @@
-import c64basic_compiler.common.opcodes_6502 as opcodes
-import c64basic_compiler.common.kernal_routines as kernal
 import c64basic_compiler.common.basic_tokens as basic_tokens
-
-from c64basic_compiler.common.petscii_map import PETSCII_ALL, PETSCII_CONTROL
+from c64basic_compiler.common.petscii_map import PETSCII_ALL
 from c64basic_compiler.compiler.instructions_registry import get_instruction_handler
+from typing import List, Dict, Any
 
 
 def generate_code(ast):
-    code = bytearray()
-    machine_code = bytearray()
-    line_addresses = {}
-    context = {"line_addresses": line_addresses}
+    code: bytearray = bytearray()
+    machine_code: bytearray = bytearray()
+    line_addresses: dict[str, int] = {}
+    context: dict[str, dict[str, int]] = {"line_addresses": line_addresses}
 
     # -----------------------------------------------
     # 1. Generate BASIC header that makes SYS jump to our code
     # -----------------------------------------------
     basic_start_addr = 0x0801
 
-    basic_line = bytearray()
+    basic_line: bytearray = bytearray()
     sys_line_number = 10
 
     basic_line += (0x0000).to_bytes(2, "little")
