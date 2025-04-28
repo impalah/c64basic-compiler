@@ -1,13 +1,16 @@
-
-from c64basic_compiler.compiler.instructions.print_handler import PrintHandler
-from c64basic_compiler.compiler.instructions.goto_handler import GotoHandler
-from c64basic_compiler.compiler.instructions.end_handler import EndHandler
+from c64basic_compiler.handlers.let_handler import LetHandler
+from c64basic_compiler.handlers.print_handler import PrintHandler
+from c64basic_compiler.handlers.goto_handler import GotoHandler
+from c64basic_compiler.handlers.end_handler import EndHandler
+from c64basic_compiler.handlers.rem_handler import RemHandler
 
 
 instruction_handlers = {
     "PRINT": PrintHandler,
     "GOTO": GotoHandler,
     "END": EndHandler,
+    "REM": RemHandler,
+    "LET": LetHandler,
 }
 
 
