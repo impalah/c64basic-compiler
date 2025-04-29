@@ -86,3 +86,17 @@ CHR_DOLLAR = 0xC7
 LEFT_DOLLAR = 0xC8
 RIGHT_DOLLAR = 0xC9
 MID_DOLLAR = 0xCA
+
+
+# ---------------------------------------------------
+# List of BASIC commands (keywords) to support in the parser
+# ---------------------------------------------------
+SUPPORTED_COMMANDS = {
+    "END", "FOR", "NEXT", "DATA", "INPUT#", "INPUT", "DIM", "READ", "LET",
+    "GOTO", "RUN", "IF", "RESTORE", "GOSUB", "RETURN", "REM", "STOP", "ON",
+    "WAIT", "LOAD", "SAVE", "VERIFY", "DEF", "POKE", "PRINT#", "PRINT", "CONT",
+    "LIST", "CLR", "CMD", "SYS", "OPEN", "CLOSE", "GET", "NEW"
+}
+
+
+
