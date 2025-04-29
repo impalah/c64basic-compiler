@@ -1,21 +1,18 @@
 # c64basic_compiler/handlers/goto_handler.py
 
 from c64basic_compiler.common.opcodes_6502 import JMP_ABSOLUTE
-from c64basic_compiler.handlers.instruction_handler import (
-    InstructionHandler,
-)
-
+from c64basic_compiler.handlers.instruction_handler import InstructionHandler
 
 class GotoHandler(InstructionHandler):
     def size(self) -> int:
-        # GOTO always generates a JMP absolute: 1 opcode + 2 bytes address
-        return 3
+        return 3  # JMP absoluto: opcode (1) + dirección (2)
 
     def emit(self) -> bytearray:
         machine_code = bytearray()
 
         target_line = int(self.instr["args"][0])
-        target_addr = self.context["line_addresses"].get(target_line)
+        line_addresses = self.context.symbol_table.table.get("__line_addresses__", {})
+        target_addr = line_addresses.get(target_line)
 
         if target_addr is None:
             raise Exception(f"Destination line {target_line} not found.")

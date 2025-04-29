@@ -1,14 +1,13 @@
 import c64basic_compiler.common.basic_tokens as basic_tokens
 from c64basic_compiler.common.petscii_map import PETSCII_ALL
 from c64basic_compiler.compiler.instructions_registry import get_instruction_handler
+from c64basic_compiler.common.compile_context import CompileContext
 from typing import List, Dict, Any
 
-
-def generate_code(ast):
+def generate_code(ast, ctx: CompileContext):
     code: bytearray = bytearray()
     machine_code: bytearray = bytearray()
-    line_addresses: dict[str, int] = {}
-    context: dict[str, dict[str, int]] = {"line_addresses": line_addresses}
+    line_addresses: dict[str, int] = ctx.symbol_table.table.setdefault("__line_addresses__", {})
 
     # -----------------------------------------------
     # 1. Generate BASIC header that makes SYS jump to our code
@@ -49,59 +48,16 @@ def generate_code(ast):
     current_addr = start_machine_code_addr
 
     for instr in ast:
-        handler = get_instruction_handler(instr, context)
+        handler = get_instruction_handler(instr, ctx)
         line_addresses[instr["line"]] = current_addr
         current_addr += handler.size()
 
+    # -----------------------------------------------
     # 3. Generate machine code
+    # -----------------------------------------------
     for instr in ast:
-        handler = get_instruction_handler(instr, context)
+        handler = get_instruction_handler(instr, ctx)
         machine_code += handler.emit()
-
-    # for instr in ast:
-    #     line_addresses[instr["line"]] = current_addr
-
-    #     if instr["command"] == "PRINT":
-    #         text = " ".join(instr["args"]).strip('"')
-    #         current_addr += len(text) * 5 + 5
-
-    #     elif instr["command"] == "GOTO":
-    #         current_addr += 3
-
-    #     elif instr["command"] == "END":
-    #         current_addr += 1
-
-    # # -----------------------------------------------
-    # # 3. Generate machine code
-    # # -----------------------------------------------
-    # for instr in ast:
-    #     if instr["command"] == "PRINT":
-    #         text = " ".join(instr["args"]).strip('"')
-    #         for c in text:
-    #             machine_code.append(opcodes.LDA_IMMEDIATE)
-    #             machine_code.append(ord(c))
-    #             machine_code.append(opcodes.JSR)
-    #             machine_code.append(kernal.CHROUT & 0xFF)
-    #             machine_code.append((kernal.CHROUT >> 8) & 0xFF)
-
-    #         machine_code.append(opcodes.LDA_IMMEDIATE)
-    #         machine_code.append(PETSCII_CONTROL["CR"])  # Return / New line (CR)
-    #         machine_code.append(opcodes.JSR)
-    #         machine_code.append(kernal.CHROUT & 0xFF)
-    #         machine_code.append((kernal.CHROUT >> 8) & 0xFF)
-
-    #     elif instr["command"] == "GOTO":
-    #         target_line = int(instr["args"][0])
-    #         target_addr = line_addresses.get(target_line)
-    #         if target_addr is None:
-    #             raise Exception(f"Destination line {target_line} not found.")
-
-    #         machine_code.append(opcodes.JMP_ABSOLUTE)
-    #         machine_code.append(target_addr & 0xFF)
-    #         machine_code.append((target_addr >> 8) & 0xFF)
-
-    #     elif instr["command"] == "END":
-    #         machine_code.append(opcodes.BRK)
 
     # -----------------------------------------------
     # 4. Combine BASIC header and machine code
