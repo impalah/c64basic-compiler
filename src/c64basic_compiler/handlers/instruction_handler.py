@@ -4,7 +4,7 @@ from typing import Any
 class InstructionHandler:
     """Base class for handling instructions in the C64 BASIC compiler."""
 
-    def __init__(self, instr: str, context: dict[str, Any]):
+    def __init__(self, instr: str, context):
         self.instr = instr
         self.context = context  # line_addresses, symbol_table, etc.
 

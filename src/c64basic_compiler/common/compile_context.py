@@ -1,6 +1,8 @@
 # c64basic_compiler/common/compile_context.py
 
+from c64basic_compiler.common.string_area import StringAreaAllocator
 from c64basic_compiler.common.symbol_table import SymbolTable
+
 
 class CompileContext:
     """
@@ -11,6 +13,7 @@ class CompileContext:
         self.symbol_table = SymbolTable()
         self.label_counter = 0
         self.loop_stack = []
+        self.string_area = StringAreaAllocator()
 
     def new_label(self, prefix="L") -> str:
         """

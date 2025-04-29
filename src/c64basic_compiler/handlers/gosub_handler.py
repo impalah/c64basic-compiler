@@ -3,6 +3,7 @@
 from c64basic_compiler.common.opcodes_6502 import JSR_ABSOLUTE
 from c64basic_compiler.handlers.instruction_handler import InstructionHandler
 
+
 class GosubHandler(InstructionHandler):
     def size(self) -> int:
         # GOSUB genera un JSR absoluto (1 + 2 bytes)

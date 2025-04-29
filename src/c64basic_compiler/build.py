@@ -6,6 +6,7 @@ from c64basic_compiler.compiler.codegen import generate_code
 from c64basic_compiler.compiler.parser import parse
 from c64basic_compiler.compiler.prg_writer import write_prg
 from c64basic_compiler.compiler.tokenizer import tokenize
+from c64basic_compiler.common.compile_context import CompileContext
 
 
 def main() -> None:
@@ -46,9 +47,10 @@ def main() -> None:
     with open(input_file) as f:
         source = f.read()
 
+    ctx = CompileContext()
     tokens = tokenize(source)
     ast = parse(tokens)
-    binary = generate_code(ast)
+    binary = generate_code(ast, ctx)
 
     write_prg(output_file, binary)
     print(f"Binary file PRG succesfully generated: {output_file}")

@@ -3,25 +3,32 @@
 import c64basic_compiler.common.opcodes_6502 as opcodes
 from c64basic_compiler.handlers.instruction_handler import InstructionHandler
 
+
+BASE_VARIABLES_ADDR = 0xC000
+
+
 class LetHandler(InstructionHandler):
     def normalize_varname(self, name: str) -> str:
         name = name.upper()
         if not name[0].isalpha():
-            raise ValueError(f"Invalid variable name (must start with a letter): {name}")
+            raise ValueError(
+                f"Invalid variable name (must start with a letter): {name}"
+            )
         if len(name) > 255:
             raise ValueError(f"Variable name too long: {name}")
         if not all(c.isalnum() or c == "$" for c in name):
-            raise ValueError(f"Variable name can only contain letters, numbers and $: {name}")
-        return name[:2]  # C64: solo los dos primeros caracteres cuentan
+            raise ValueError(
+                f"Variable name can only contain letters, numbers and $: {name}"
+            )
+        return name  # no cortamos a 2 chars, ya que estás permitiendo 255
 
     def size(self) -> int:
-        # Aproximadamente 5 bytes: LDA + dato o dirección + STA dirección
-        return 5
+        # LDA + dato o LDA + dirección + STA + dirección → estimado máximo
+        return 10
 
     def emit(self) -> bytearray:
         machine_code = bytearray()
 
-        # Args ejemplo: ['A', '=', '5'] o ['A', '=', 'B']
         varname = self.normalize_varname(self.instr["args"][0])
         symbol_table = self.context.symbol_table
 
@@ -30,15 +37,46 @@ class LetHandler(InstructionHandler):
 
         value_token = self.instr["args"][2]
 
-        if value_token.isdigit():
-            # Asignación inmediata de número
-            value = int(value_token)
+        # --- CASO 1: asignación de cadena literal ---
+        if value_token.startswith('"') and value_token.endswith('"'):
+            if var_type != "string":
+                raise Exception(
+                    f"Cannot assign a string to non-string variable '{varname}'."
+                )
 
+            string_literal = value_token.strip('"')
+            string_area = self.context.string_area
+            str_address = string_area.store_string(string_literal)
+
+            # LDA #low(str_address)
+            machine_code.append(opcodes.LDA_IMMEDIATE)
+            machine_code.append(str_address & 0xFF)
+            # STA target_address
+            machine_code.append(opcodes.STA_ABSOLUTE)
+            machine_code.append(target_address & 0xFF)
+            machine_code.append((target_address >> 8) & 0xFF)
+
+            # LDA #high(str_address)
+            machine_code.append(opcodes.LDA_IMMEDIATE)
+            machine_code.append((str_address >> 8) & 0xFF)
+            # STA target_address + 1
+            machine_code.append(opcodes.STA_ABSOLUTE)
+            machine_code.append((target_address + 1) & 0xFF)
+            machine_code.append(((target_address + 1) >> 8) & 0xFF)
+
+            return machine_code
+
+        # --- CASO 2: asignación de número inmediato ---
+        if value_token.isdigit():
+            if var_type != "number":
+                raise Exception(f"Cannot assign number to string variable '{varname}'.")
+
+            value = int(value_token)
             machine_code.append(opcodes.LDA_IMMEDIATE)
             machine_code.append(value)
 
+        # --- CASO 3: asignación de variable a variable ---
         else:
-            # Asignación de una variable a otra
             src_varname = self.normalize_varname(value_token)
 
             if src_varname not in symbol_table:
@@ -46,11 +84,34 @@ class LetHandler(InstructionHandler):
 
             src_address = symbol_table.get_address(src_varname)
 
-            machine_code.append(opcodes.LDA_ABSOLUTE)
-            machine_code.append(src_address & 0xFF)
-            machine_code.append((src_address >> 8) & 0xFF)
+            if var_type == "string":
+                # Copiar 2 bytes de dirección (puntero a cadena)
+                # LDA src lo
+                machine_code.append(opcodes.LDA_ABSOLUTE)
+                machine_code.append(src_address & 0xFF)
+                machine_code.append((src_address >> 8) & 0xFF)
+                # STA target lo
+                machine_code.append(opcodes.STA_ABSOLUTE)
+                machine_code.append(target_address & 0xFF)
+                machine_code.append((target_address >> 8) & 0xFF)
 
-        # STA target_address
+                # LDA src hi
+                machine_code.append(opcodes.LDA_ABSOLUTE)
+                machine_code.append((src_address + 1) & 0xFF)
+                machine_code.append(((src_address + 1) >> 8) & 0xFF)
+                # STA target hi
+                machine_code.append(opcodes.STA_ABSOLUTE)
+                machine_code.append((target_address + 1) & 0xFF)
+                machine_code.append(((target_address + 1) >> 8) & 0xFF)
+
+                return machine_code
+            else:
+                # variable numérica
+                machine_code.append(opcodes.LDA_ABSOLUTE)
+                machine_code.append(src_address & 0xFF)
+                machine_code.append((src_address >> 8) & 0xFF)
+
+        # STA target_address (para variable numérica)
         machine_code.append(opcodes.STA_ABSOLUTE)
         machine_code.append(target_address & 0xFF)
         machine_code.append((target_address >> 8) & 0xFF)

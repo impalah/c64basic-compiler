@@ -4,10 +4,13 @@ from c64basic_compiler.compiler.instructions_registry import get_instruction_han
 from c64basic_compiler.common.compile_context import CompileContext
 from typing import List, Dict, Any
 
+
 def generate_code(ast, ctx: CompileContext):
     code: bytearray = bytearray()
     machine_code: bytearray = bytearray()
-    line_addresses: dict[str, int] = ctx.symbol_table.table.setdefault("__line_addresses__", {})
+    line_addresses: dict[str, int] = ctx.symbol_table.table.setdefault(
+        "__line_addresses__", {}
+    )
 
     # -----------------------------------------------
     # 1. Generate BASIC header that makes SYS jump to our code
@@ -63,5 +66,6 @@ def generate_code(ast, ctx: CompileContext):
     # 4. Combine BASIC header and machine code
     # -----------------------------------------------
     code += machine_code
+    code += ctx.string_area.emit()  # adjuntar datos de cadena en RAM
 
     return code
