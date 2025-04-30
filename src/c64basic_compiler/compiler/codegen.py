@@ -4,6 +4,8 @@ from c64basic_compiler.compiler.instructions_registry import get_instruction_han
 from c64basic_compiler.common.compile_context import CompileContext
 from typing import List, Dict, Any
 
+from c64basic_compiler.handlers.instruction_handler import InstructionHandler
+
 
 def generate_code(ast, ctx: CompileContext):
     code: bytearray = bytearray()
@@ -22,7 +24,7 @@ def generate_code(ast, ctx: CompileContext):
 
     basic_line += (0x0000).to_bytes(2, "little")
     basic_line += (sys_line_number).to_bytes(2, "little")
-    basic_line.append(basic_tokens.SYS)  # SYS token in BASIC V2
+    basic_line.append(basic_tokens.SYS)
     basic_line.append(PETSCII_ALL[" "])
 
     fake_sys_addr_str = "0000"
@@ -59,7 +61,8 @@ def generate_code(ast, ctx: CompileContext):
     # 3. Generate machine code
     # -----------------------------------------------
     for instr in ast:
-        handler = get_instruction_handler(instr, ctx)
+        handler: InstructionHandler = get_instruction_handler(instr, ctx)
+        handler.current_address = line_addresses[instr["line"]]
         machine_code += handler.emit()
 
     # -----------------------------------------------

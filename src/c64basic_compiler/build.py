@@ -1,12 +1,15 @@
 import argparse
 import os
 import sys
+import json
 
 from c64basic_compiler.compiler.codegen import generate_code
 from c64basic_compiler.compiler.parser import parse
 from c64basic_compiler.compiler.prg_writer import write_prg
 from c64basic_compiler.compiler.tokenizer import tokenize
 from c64basic_compiler.common.compile_context import CompileContext
+
+from c64basic_compiler.utils.logging import logger, configure_logger
 
 
 def main() -> None:
@@ -18,11 +21,19 @@ def main() -> None:
     parser.add_argument(
         "-f", "--force", action="store_true", help="Overwrite output file if it exists"
     )
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Show extended information about the compilation"
+    )
+
     args = parser.parse_args()
 
     input_file = args.input
     output_file = args.output
     force_overwrite = args.force
+
+    logger_level = "DEBUG" if args.verbose else "INFO"
+    configure_logger(level=logger_level)
+
 
     if not os.path.isfile(input_file):
         print(f"Error: Input file '{input_file}' does not exist.")
@@ -40,7 +51,7 @@ def main() -> None:
             .strip()
             .lower()
         )
-        if confirm != "n":
+        if confirm != "y":
             print("Operation cancelled.")
             sys.exit(1)
 
@@ -49,7 +60,14 @@ def main() -> None:
 
     ctx = CompileContext()
     tokens = tokenize(source)
+    logger.debug(f"Tokens: {json.dumps(tokens, indent=4)}")
+
+    # Parse the tokens into an abstract syntax tree (AST)
     ast = parse(tokens)
+    logger.debug(f"AST: {json.dumps(ast, indent=4)}")
+
+    logger.debug(f"Compile context: {ctx}")
+
     binary = generate_code(ast, ctx)
 
     write_prg(output_file, binary)

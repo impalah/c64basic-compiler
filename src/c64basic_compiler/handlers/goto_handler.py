@@ -2,6 +2,7 @@
 
 from c64basic_compiler.common.opcodes_6502 import JMP_ABSOLUTE
 from c64basic_compiler.handlers.instruction_handler import InstructionHandler
+from c64basic_compiler.utils.logging import logger
 
 class GotoHandler(InstructionHandler):
     def size(self) -> int:
@@ -12,9 +13,14 @@ class GotoHandler(InstructionHandler):
 
         target_line = int(self.instr["args"][0])
         line_addresses = self.context.symbol_table.table.get("__line_addresses__", {})
+        logger.debug(f"Line addresses: {line_addresses}")
+
         target_addr = line_addresses.get(target_line)
 
+        logger.debug(f"Emitting GOTO for line {target_line} to address {target_addr}")
+
         if target_addr is None:
+            logger.error(f"Destination line {target_line} not found.")
             raise Exception(f"Destination line {target_line} not found.")
 
         machine_code.append(JMP_ABSOLUTE)
