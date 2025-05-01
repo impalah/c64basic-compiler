@@ -22,7 +22,10 @@ def main() -> None:
         "-f", "--force", action="store_true", help="Overwrite output file if it exists"
     )
     parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Show extended information about the compilation"
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Show extended information about the compilation",
     )
 
     args = parser.parse_args()
@@ -33,7 +36,6 @@ def main() -> None:
 
     logger_level = "DEBUG" if args.verbose else "INFO"
     configure_logger(level=logger_level)
-
 
     if not os.path.isfile(input_file):
         print(f"Error: Input file '{input_file}' does not exist.")
@@ -60,11 +62,13 @@ def main() -> None:
 
     ctx = CompileContext()
     tokens = tokenize(source)
-    logger.debug(f"Tokens: {json.dumps(tokens, indent=4)}")
+    # logger.debug(f"Tokens: {json.dumps(tokens, indent=4)}")
+    logger.debug(f"Tokens: {tokens}")
 
     # Parse the tokens into an abstract syntax tree (AST)
     ast = parse(tokens)
-    logger.debug(f"AST: {json.dumps(ast, indent=4)}")
+    # logger.debug(f"AST: {json.dumps(ast, indent=4)}")
+    logger.debug(f"AST: {ast}")
 
     logger.debug(f"Compile context: {ctx}")
 

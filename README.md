@@ -16,7 +16,7 @@ Commodore 64 basic compiler.
 ## Use
 
 ```
-uv run -- python -m c64basic_compiler.build -i examples/helloworld.bas -o examples/helloworld.prg -v
+uv run -- python -m c64basic_compiler.build -i examples/helloworld.bas -o dist/helloworld.prg -v
 ```
 
 Will create `out/prg_output.prg`.

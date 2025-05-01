@@ -5,9 +5,13 @@ from c64basic_compiler.common.compile_context import CompileContext
 from typing import List, Dict, Any
 
 from c64basic_compiler.handlers.instruction_handler import InstructionHandler
+from c64basic_compiler.utils.logging import logger
+import c64basic_compiler.common.opcodes_6502 as opcodes
 
 
 def generate_code(ast, ctx: CompileContext):
+
+    logger.debug("Generating code...")
     code: bytearray = bytearray()
     machine_code: bytearray = bytearray()
     line_addresses: dict[str, int] = ctx.symbol_table.table.setdefault(
@@ -17,6 +21,7 @@ def generate_code(ast, ctx: CompileContext):
     # -----------------------------------------------
     # 1. Generate BASIC header that makes SYS jump to our code
     # -----------------------------------------------
+    logger.debug("Generating BASIC header...")
     basic_start_addr = 0x0801
 
     basic_line: bytearray = bytearray()
@@ -47,9 +52,12 @@ def generate_code(ast, ctx: CompileContext):
 
     code += basic_line
 
+    logger.debug(f"Basic header generated: {basic_line.hex()}")
+
     # -----------------------------------------------
     # 2. First pass: calculate addresses for each instruction
     # -----------------------------------------------
+    logger.debug("Calculating addresses for each instruction...")
     current_addr = start_machine_code_addr
 
     for instr in ast:
@@ -57,17 +65,28 @@ def generate_code(ast, ctx: CompileContext):
         line_addresses[instr["line"]] = current_addr
         current_addr += handler.size()
 
+    logger.debug(f"Addresses calculated: {line_addresses}")
+
     # -----------------------------------------------
     # 3. Generate machine code
     # -----------------------------------------------
+    logger.debug("Generating machine code...")
+
     for instr in ast:
         handler: InstructionHandler = get_instruction_handler(instr, ctx)
         handler.current_address = line_addresses[instr["line"]]
         machine_code += handler.emit()
 
+    logger.debug(f"Machine code generated: {machine_code.hex()}")
+
+    # Add RTS instruction at the end of the code
+    # to return to BASIC after execution
+    machine_code.append(opcodes.RTS)
+
     # -----------------------------------------------
     # 4. Combine BASIC header and machine code
     # -----------------------------------------------
+    logger.debug("Combining BASIC header and machine code...")
     code += machine_code
     code += ctx.string_area.emit()  # adjuntar datos de cadena en RAM
 

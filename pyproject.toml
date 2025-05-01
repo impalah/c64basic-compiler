@@ -59,5 +59,6 @@ dev = [
 
 [project.scripts]
 build = "c64basic_compiler.build:main"
+convert = "c64basic_compiler.bas2prg:main"
 
 

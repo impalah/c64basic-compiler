@@ -1,81 +1,36 @@
 # c64basic_compiler/handlers/end_handler.py
 
-from c64basic_compiler.common.opcodes_6502 import (
-    LDA_IMMEDIATE,
-    CMP_IMMEDIATE,
-    JSR_ABSOLUTE,
-    BEQ,
-    JMP_ABSOLUTE,
-)
+from c64basic_compiler.common.opcodes_6502 import BRK, JMP_ABSOLUTE, RTS, NOP
 from c64basic_compiler.handlers.instruction_handler import InstructionHandler
-from c64basic_compiler.common.kernal_routines import CHROUT, GETIN
-from c64basic_compiler.common.petscii_map import PETSCII_CONTROL
+from c64basic_compiler.utils.logging import logger
 
 
 class EndHandler(InstructionHandler):
     def size(self) -> int:
-        # Estimación conservadora
-        return 150
+        # BRK (1 byte) + JMP (3 bytes)
+        return 1
 
     def emit(self) -> bytearray:
-        """Prints a message and waits for a key press.
-
-        Raises:
-            ValueError: _description_
-
-        Returns:
-            bytearray: _description_
-        """
         if self.current_address is None:
             raise ValueError("current_address must be set before emit() is called.")
 
-        message = "PRESS ANY KEY TO EXIT"
-
         machine_code = bytearray()
 
-        # 1. Imprimir el mensaje
-        for char in message:
-            machine_code.append(LDA_IMMEDIATE)
-            machine_code.append(ord(char))
-            machine_code.append(JSR_ABSOLUTE)
-            machine_code.append(CHROUT & 0xFF)
-            machine_code.append((CHROUT >> 8) & 0xFF)
+        # Using BRK will clear screen and return to BASIC
+        # # Emit BRK (software break, optional)
+        # machine_code.append(BRK)
 
-        # CR
-        machine_code.append(LDA_IMMEDIATE)
-        machine_code.append(PETSCII_CONTROL["CR"])
-        machine_code.append(JSR_ABSOLUTE)
-        machine_code.append(CHROUT & 0xFF)
-        machine_code.append((CHROUT >> 8) & 0xFF)
+        # NOP for end of program
+        machine_code.append(NOP)
 
-        # 2. Bucle de espera de tecla
-        wait_loop_addr = self.current_address + len(machine_code)
+        # # Emit JMP to self.current_address (infinite loop)
+        # machine_code.append(JMP_ABSOLUTE)
+        # machine_code.append(self.current_address & 0xFF)
+        # machine_code.append((self.current_address >> 8) & 0xFF)
 
-        # JSR GETIN
-        machine_code.append(JSR_ABSOLUTE)
-        machine_code.append(GETIN & 0xFF)
-        machine_code.append((GETIN >> 8) & 0xFF)
-
-        # CMP #$00
-        machine_code.append(CMP_IMMEDIATE)
-        machine_code.append(0x00)
-
-        # BEQ -7 → vuelve a GETIN
-        machine_code.append(BEQ)
-        machine_code.append(0xF9)
-
-        # 3. Bucle infinito limpio al final
-        halt_addr = self.current_address + len(machine_code)
-
-        machine_code.append(JMP_ABSOLUTE)
-        machine_code.append(halt_addr & 0xFF)
-        machine_code.append((halt_addr >> 8) & 0xFF)
+        logger.debug(f"Emitting END at address {self.current_address}")
 
         return machine_code
-
-
-
-
 
 
 # ---------------------------------------------------------------------
@@ -124,23 +79,6 @@ class EndHandler(InstructionHandler):
 #         return machine_code
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # ----------------------------------------------------------------------------------
 # OLD CODE (deprecated): break + jump to self.current_address
 
@@ -170,10 +108,6 @@ class EndHandler(InstructionHandler):
 #         logger.debug(f"Emitting END at address {self.current_address}")
 
 #         return machine_code
-
-
-
-
 
 
 # ----------------------------------------------------------------------------------

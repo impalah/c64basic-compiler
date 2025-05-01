@@ -1,4 +1,5 @@
 from c64basic_compiler.handlers.end_handler import EndHandler
+from c64basic_compiler.handlers.extensions.halt_handler import HaltHandler
 from c64basic_compiler.handlers.gosub_handler import GosubHandler
 from c64basic_compiler.handlers.goto_handler import GotoHandler
 from c64basic_compiler.handlers.let_handler import LetHandler
@@ -14,8 +15,9 @@ instruction_handlers = {
     "LET": LetHandler,
     "GOSUB": GosubHandler,
     "RETURN": ReturnHandler,
-    
+    "HALT": HaltHandler,
 }
+
 
 def get_instruction_handler(instr, context):
     command = instr["command"].upper()
