@@ -79,9 +79,12 @@ def generate_code(ast, ctx: CompileContext):
 
     logger.debug(f"Machine code generated: {machine_code.hex()}")
 
-    # Add RTS instruction at the end of the code
-    # to return to BASIC after execution
-    machine_code.append(opcodes.RTS)
+    # Check if the last line of code is RTS, and, if not, append it
+    # to the end of the code. This is necessary to return to BASIC.
+    # TODO: make it configurable in the compiler options
+    if machine_code[-1] != opcodes.RTS:
+        logger.debug("Appending RTS to the end of the code...")
+        machine_code.append(opcodes.RTS)
 
     # -----------------------------------------------
     # 4. Combine BASIC header and machine code

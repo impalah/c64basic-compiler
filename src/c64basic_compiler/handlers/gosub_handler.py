@@ -2,11 +2,13 @@
 
 from c64basic_compiler.common.opcodes_6502 import JSR_ABSOLUTE
 from c64basic_compiler.handlers.instruction_handler import InstructionHandler
+from c64basic_compiler.utils.logging import logger
 
 
 class GosubHandler(InstructionHandler):
     def size(self) -> int:
         # GOSUB genera un JSR absoluto (1 + 2 bytes)
+        logger.debug("Calculating size for GOSUB instruction: 3 bytes")
         return 3
 
     def emit(self) -> bytearray:
@@ -22,5 +24,8 @@ class GosubHandler(InstructionHandler):
         machine_code.append(JSR_ABSOLUTE)
         machine_code.append(target_addr & 0xFF)
         machine_code.append((target_addr >> 8) & 0xFF)
+
+        logger.debug(f"Emitting GOSUB to line {target_line} at address {self.current_address} to address {target_addr}")
+        logger.debug(f"GOSUB Machine code: {machine_code.hex()}")
 
         return machine_code

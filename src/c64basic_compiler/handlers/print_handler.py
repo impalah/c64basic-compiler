@@ -7,17 +7,39 @@ import c64basic_compiler.common.opcodes_6502 as opcodes
 import c64basic_compiler.common.kernal_routines as kernal
 from c64basic_compiler.common.petscii_map import PETSCII_CONTROL
 from c64basic_compiler.utils.print_utils import parse_print_args
+from c64basic_compiler.utils.logging import logger
+
 
 BASE_VARIABLES_ADDR = 0xC000
 
 
 class PrintHandler(InstructionHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._cached_machine_code = None  # Cache para el código máquina
+
     def size(self) -> int:
-        # Estimación conservadora: hasta 10 bytes por argumento + CR
-        return len(self.instr["args"]) * 10 + 5
+        """
+        Calculate the size of the PRINT instruction by using the cached machine code.
+        """
+        if self._cached_machine_code is None:
+            self._cached_machine_code = self.emit()  # Generar y cachear el código máquina
+        size = len(self._cached_machine_code)  # Calcular el tamaño real
+        logger.debug(f"Real size for PRINT instruction: {size} bytes")
+        return size
 
     def emit(self) -> bytearray:
+        """
+        Generate the machine code for the PRINT instruction, using the cache if available.
+        """
+        if self._cached_machine_code is not None:
+            logger.debug("Using cached machine code for PRINT instruction")
+            return self._cached_machine_code
+
         machine_code = bytearray()
+
+        logger.debug(f"PRINT instruction. Arguments {self.instr['args']}")
+
         symbol_table = self.context.symbol_table
         args = parse_print_args(self.instr["args"])
 
@@ -109,4 +131,8 @@ class PrintHandler(InstructionHandler):
         machine_code.append(kernal.CHROUT & 0xFF)
         machine_code.append((kernal.CHROUT >> 8) & 0xFF)
 
+        logger.debug(f"Emitting PRINT at address {self.current_address}")
+        logger.debug(f"PRINT Machine code: {machine_code.hex()}")
+
+        self._cached_machine_code = machine_code  # Cachear el código máquina generado
         return machine_code

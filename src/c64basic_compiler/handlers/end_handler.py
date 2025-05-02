@@ -7,7 +7,8 @@ from c64basic_compiler.utils.logging import logger
 
 class EndHandler(InstructionHandler):
     def size(self) -> int:
-        # BRK (1 byte) + JMP (3 bytes)
+        # RTS (1 byte)
+        logger.debug("Calculating size for END handler: 1 byte")
         return 1
 
     def emit(self) -> bytearray:
@@ -20,8 +21,8 @@ class EndHandler(InstructionHandler):
         # # Emit BRK (software break, optional)
         # machine_code.append(BRK)
 
-        # NOP for end of program
-        machine_code.append(NOP)
+        # RTS for end of program
+        machine_code.append(RTS)
 
         # # Emit JMP to self.current_address (infinite loop)
         # machine_code.append(JMP_ABSOLUTE)
