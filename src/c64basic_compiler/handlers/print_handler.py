@@ -45,6 +45,7 @@ class PrintHandler(InstructionHandler):
 
         for arg in args:
             if arg["type"] == "string":
+                logger.debug(f"PRINT string: {arg['value']}")
                 for c in arg["value"]:
                     machine_code.append(opcodes.LDA_IMMEDIATE)
                     machine_code.append(ord(c))
@@ -61,7 +62,10 @@ class PrintHandler(InstructionHandler):
                 var_type = symbol_table.get_type(varname)
                 address = symbol_table.get_address(varname)
 
+                logger.debug(f"PRINT variable: {varname} of type {var_type} at address {address}")
+
                 if var_type == "string":
+                    logger.debug(f"PRINT string variable: {varname} at address {address}")
                     # Leer puntero a cadena desde variable (2 bytes)
                     # Cargar lo
                     machine_code.append(opcodes.LDA_ABSOLUTE)
@@ -115,6 +119,8 @@ class PrintHandler(InstructionHandler):
                     # salida
 
                 else:  # tipo number
+                    logger.debug(f"PRINT number: {varname} at address {address}")
+
                     machine_code.append(opcodes.LDA_ABSOLUTE)
                     machine_code.append(address & 0xFF)
                     machine_code.append((address >> 8) & 0xFF)

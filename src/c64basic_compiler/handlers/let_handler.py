@@ -2,12 +2,16 @@
 
 import c64basic_compiler.common.opcodes_6502 as opcodes
 from c64basic_compiler.handlers.instruction_handler import InstructionHandler
-
+from c64basic_compiler.utils.logging import logger
 
 BASE_VARIABLES_ADDR = 0xC000
 
 
 class LetHandler(InstructionHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._cached_machine_code = None  # Cache para el código máquina
+
     def normalize_varname(self, name: str) -> str:
         name = name.upper()
         if not name[0].isalpha():
@@ -23,11 +27,26 @@ class LetHandler(InstructionHandler):
         return name  # no cortamos a 2 chars, ya que estás permitiendo 255
 
     def size(self) -> int:
-        # LDA + dato o LDA + dirección + STA + dirección → estimado máximo
-        return 10
+        """
+        Calculate the real size of the LET instruction by using the cached machine code.
+        """
+        if self._cached_machine_code is None:
+            self._cached_machine_code = self.emit()  # Generar y cachear el código máquina
+        size = len(self._cached_machine_code)  # Calcular el tamaño real
+        logger.debug(f"Real size for LET instruction: {size} bytes")
+        return size
 
     def emit(self) -> bytearray:
+        """
+        Generate the machine code for the LET instruction, using the cache if available.
+        """
+        if self._cached_machine_code is not None:
+            logger.debug("Using cached machine code for LET instruction")
+            return self._cached_machine_code
+
         machine_code = bytearray()
+
+        logger.debug(f"LET instruction. Arguments {self.instr['args']}")
 
         varname = self.normalize_varname(self.instr["args"][0])
         symbol_table = self.context.symbol_table
@@ -35,7 +54,11 @@ class LetHandler(InstructionHandler):
         var_type = "string" if varname.endswith("$") else "number"
         target_address = symbol_table.register(varname, var_type)
 
+        logger.debug(f"LET Variable '{varname}' type: {var_type}")
+        logger.debug(f"LET variable '{varname}' registered at address {target_address}")
+
         value_token = self.instr["args"][2]
+        logger.debug(f"LET Value token: {value_token}")
 
         # --- CASO 1: asignación de cadena literal ---
         if value_token.startswith('"') and value_token.endswith('"'):
@@ -43,6 +66,8 @@ class LetHandler(InstructionHandler):
                 raise Exception(
                     f"Cannot assign a string to non-string variable '{varname}'."
                 )
+
+            logger.debug(f"LET String literal: {value_token}")
 
             string_literal = value_token.strip('"')
             string_area = self.context.string_area
@@ -64,19 +89,28 @@ class LetHandler(InstructionHandler):
             machine_code.append((target_address + 1) & 0xFF)
             machine_code.append(((target_address + 1) >> 8) & 0xFF)
 
-            return machine_code
-
         # --- CASO 2: asignación de número inmediato ---
-        if value_token.isdigit():
+        elif value_token.isdigit():
             if var_type != "number":
                 raise Exception(f"Cannot assign number to string variable '{varname}'.")
 
             value = int(value_token)
+
+            logger.debug(f"LET Number literal: {value}")
+
             machine_code.append(opcodes.LDA_IMMEDIATE)
             machine_code.append(value)
 
+            # STA target_address (para variable numérica)
+            machine_code.append(opcodes.STA_ABSOLUTE)
+            machine_code.append(target_address & 0xFF)
+            machine_code.append((target_address >> 8) & 0xFF)
+
+
         # --- CASO 3: asignación de variable a variable ---
         else:
+            logger.debug(f"LET Variable assignment: {value_token}")
+
             src_varname = self.normalize_varname(value_token)
 
             if src_varname not in symbol_table:
@@ -103,17 +137,18 @@ class LetHandler(InstructionHandler):
                 machine_code.append(opcodes.STA_ABSOLUTE)
                 machine_code.append((target_address + 1) & 0xFF)
                 machine_code.append(((target_address + 1) >> 8) & 0xFF)
-
-                return machine_code
             else:
                 # variable numérica
                 machine_code.append(opcodes.LDA_ABSOLUTE)
                 machine_code.append(src_address & 0xFF)
                 machine_code.append((src_address >> 8) & 0xFF)
 
-        # STA target_address (para variable numérica)
-        machine_code.append(opcodes.STA_ABSOLUTE)
-        machine_code.append(target_address & 0xFF)
-        machine_code.append((target_address >> 8) & 0xFF)
+            # STA target_address (para variable numérica)
+            machine_code.append(opcodes.STA_ABSOLUTE)
+            machine_code.append(target_address & 0xFF)
+            machine_code.append((target_address >> 8) & 0xFF)
 
+        self._cached_machine_code = machine_code  # Cachear el código máquina generado
+        logger.debug(f"LET Machine code: {machine_code.hex()}")
         return machine_code
+
