@@ -8,6 +8,11 @@ def tokenize(source: str) -> list[tuple[int, list[str]]]:
     Returns:
         List of tuples: (line_number, [tokens])
     """
+    import re
+
+    # Define a regex pattern to split tokens correctly
+    token_pattern = r'("[^"]*"|\w+\$?|\=|[^\s:])'
+
     lines = source.strip().splitlines()
     result = []
 
@@ -37,34 +42,8 @@ def tokenize(source: str) -> list[tuple[int, list[str]]]:
             statements.append(current_stmt.strip())
 
         for stmt in statements:
-            tokens = []
-            current = ""
-            in_string = False
-            i = 0
-
-            while i < len(stmt):
-                c = stmt[i]
-                if c == '"':
-                    current += c
-                    i += 1
-                    while i < len(stmt):
-                        current += stmt[i]
-                        if stmt[i] == '"':
-                            i += 1
-                            break
-                        i += 1
-                    tokens.append(current.strip())
-                    current = ""
-                elif c in " \t":
-                    if current:
-                        tokens.append(current.strip())
-                        current = ""
-                    i += 1
-                else:
-                    current += c
-                    i += 1
-            if current:
-                tokens.append(current.strip())
+            # Use regex to tokenize the statement
+            tokens = re.findall(token_pattern, stmt)
             result.append((line_number, tokens))
 
     return result

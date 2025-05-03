@@ -8,7 +8,7 @@ class StringAreaAllocator:
         self.storage = []  # cada string es una (offset, contenido)
 
     def store_string(self, text: str) -> int:
-        addr = self.current
+        addr: int = self.current
         self.storage.append((addr, text))
         self.current += len(text) + 1  # +1 para terminador 0
         return addr

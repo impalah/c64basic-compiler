@@ -41,3 +41,34 @@ lda #$37
 sta $01
 
 ```
+
+## Microkernel de gestión de memoria
+
+El compilador incluye un microkernel que provee de ciertas rutinas para la gestión de memoria que se encarga de:
+- Mantener una tabla de punteros a variables: 2 bytes dirección, 2 byte tamaño. 
+- Asignar variables y cambiar las posiciones de memoria cuando cambie el valor.
+
+| Offset | Contenido      | Comentario |
+| ------ | -------------- | ---------- |
+| 0      | Dirección baja | `addr_lo`  |
+| 1      | Dirección alta | `addr_hi`  |
+| 2      | Tamaño bajo    | `size_lo`  |
+| 3      | Tamaño alto    | `size_hi`  |
+
+Ejemplo con dos variables:
+
+Tabla en $C000:
+$C000: 00 90 05 00   → variable en $9000, tamaño 5
+$C004: 10 91 0A 00   → variable en $9110, tamaño 10
+
+Hay una zona de memoria, digamos en $C000, que contiene N entradas de 4 bytes. Cada una dice:
+- Dónde está la variable en memoria
+- Cuánto ocupa (en bytes)
+
+Esto permite:
+- Recorrer la tabla
+- Leer el contenido de cada variable
+- Escribir en la variable sabiendo su tamaño
+- Realizar una compactación si se necesita reorganizar
+
+

@@ -1,5 +1,6 @@
 # c64basic_compiler/common/symbol_table.py
 
+
 class SymbolTable:
     """
     Symbol table for variables used in BASIC.
@@ -13,21 +14,33 @@ class SymbolTable:
 
     def _normalize_name(self, name: str) -> str:
         """
-        Normalize variable name to 2 uppercase characters (C64 rule).
-        """
-        return name.upper()[:2]
+        Normalize variable name to uppercase characters (C64 rule).
 
-    def register(self, name: str, vtype: str = "number") -> int:
+        """
+        # TODO: probably unnecessary, but keep it for now
+        # varname is normalized on LET handler
+
+        # return name.upper()[:2]
+        return name.upper()
+
+    def register(
+        self,
+        name: str,
+        size: int,
+        vtype: str = "number",
+    ) -> int:
         """
         Register a variable if it doesn't exist. Returns absolute address.
         """
+
         name = self._normalize_name(name)
         if name not in self.table:
             self.table[name] = {
                 "offset": self.offset,
                 "type": vtype,
             }
-            self.offset += 1
+            # Update offset for the next variable
+            self.offset += size
         return self.get_address(name)
 
     def get_address(self, name: str) -> int:

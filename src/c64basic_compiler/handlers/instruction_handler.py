@@ -1,12 +1,14 @@
 from typing import Any, Optional
 
+from c64basic_compiler.common.compile_context import CompileContext
+
 
 class InstructionHandler:
     """Base class for handling instructions in the C64 BASIC compiler."""
 
-    def __init__(self, instr: str, context):
+    def __init__(self, instr: str, context: CompileContext):
         self.instr = instr
-        self.context = context  # line_addresses, symbol_table, etc.
+        self.context: CompileContext = context  # line_addresses, symbol_table, etc.
         self.current_address: Optional[int] = None  # Set externally in generate_code()
 
     def size(self) -> int:
