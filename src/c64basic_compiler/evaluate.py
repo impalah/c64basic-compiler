@@ -19,12 +19,49 @@ Token = Union[str, float, int]
 
 # --- Tokens: literales, variables, operadores, funciones ---
 def tokenize(expr: str) -> list[str]:
-    expr_no_spaces: str = expr.replace(" ", "")
-    pattern: str = (
-        r'("[^"]*"|(?<![A-Za-z0-9\$\)])-?\d+\.\d+|-?\d+|[A-Za-z\$][A-Za-z0-9\$]*|[-+*/()])'
+    """
+    Tokenize an expression while preserving spaces in string literals.
+
+    Args:
+        expr: The expression to tokenize
+
+    Returns:
+        A list of tokens
+    """
+    # First, find and extract string literals to protect their content
+    string_literals = {}
+    string_marker = "__STRING_LITERAL_"
+
+    def replace_string(match):
+        nonlocal string_literals
+        placeholder = f"{string_marker}{len(string_literals)}_"
+        string_literals[placeholder] = match.group(0)
+        return placeholder
+
+    # Replace string literals with placeholders
+    pattern_strings = r'"[^"]*"'
+    expr_with_placeholders = re.sub(pattern_strings, replace_string, expr)
+
+    # Now remove spaces outside string literals
+    expr_no_spaces = expr_with_placeholders.replace(" ", "")
+
+    # Tokenize the expression
+    pattern = (
+        r"("
+        + string_marker
+        + r"\d+_|(?<![A-Za-z0-9\$\)])-?\d+\.\d+|-?\d+|[A-Za-z\$][A-Za-z0-9\$]*|[-+*/()])"
     )
-    tokens: list[str] = re.findall(pattern, expr_no_spaces)
-    return tokens
+    tokens = re.findall(pattern, expr_no_spaces)
+
+    # Restore string literals
+    result = []
+    for token in tokens:
+        if token.startswith(string_marker):
+            result.append(string_literals[token])
+        else:
+            result.append(token)
+
+    return result
 
 
 # --- Conversión infijo → RPN ---

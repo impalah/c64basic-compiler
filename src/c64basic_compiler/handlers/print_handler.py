@@ -10,6 +10,7 @@ from c64basic_compiler.utils.logging import logger
 from c64basic_compiler.evaluate import evaluate_expression
 from c64basic_compiler.exceptions import EvaluationError
 from typing import List, Dict, Any
+import re
 
 
 BASE_VARIABLES_ADDR = 0xC000
@@ -42,61 +43,91 @@ class PrintHandler(InstructionHandler):
         args = self.instr["args"]
         output = []
 
-        # Keep track of where we are in the argument list
-        i = 0
-        # Buffer to accumulate parts of an expression
+        # Track whether we're inside a quoted string
+        in_string = False
+        string_buffer = ""
         expr_buffer = []
-        # Flag to track if a separator was the last thing processed
-        last_was_separator = False
+        i = 0
 
+        # Process each argument
         while i < len(args):
             arg = args[i]
 
             # Check if this is a separator
-            if arg == "," or arg == ";":
-                # If we have accumulated an expression, evaluate it
-                if expr_buffer:
+            if arg in [",", ";"]:
+                # Process any pending expression or string
+                if string_buffer:
+                    output.append(f'PUSH_CONST "{string_buffer}"')
+                    output.append("PRINT_VALUE")
+                    string_buffer = ""
+                elif expr_buffer:
                     expr_str = " ".join(expr_buffer)
                     try:
-                        # Evaluate the expression and add its code to the output
                         expr_code = evaluate_expression(expr_str)
                         output.extend(expr_code)
-                        output.append("PRINT_VALUE")  # Instruction to print the value
-                    except EvaluationError as e:
-                        logger.warning(f"Error evaluating expression '{expr_str}': {e}")
+                        output.append("PRINT_VALUE")
+                    except Exception as e:
+                        logger.error(f"Error evaluating expression '{expr_str}': {e}")
                         output.append(f"# Failed to evaluate: {expr_str}")
-
-                    # Clear the buffer for the next expression
                     expr_buffer = []
 
-                # Add appropriate separator instruction
+                # Add separator instruction
                 if arg == ",":
-                    output.append("PRINT_TAB")  # Tab to next column
+                    output.append("PRINT_TAB")
                 elif arg == ";":
-                    output.append("PRINT_NO_NEWLINE")  # Suppress newline
+                    output.append("PRINT_NO_NEWLINE")
 
-                last_was_separator = True
                 i += 1
+
+            # Handle string literals
+            elif arg.startswith('"') and arg.endswith('"'):
+                # Full quoted string in a single argument
+                output.append(f"PUSH_CONST {arg}")
+                output.append("PRINT_VALUE")
+                i += 1
+
+            # Start of a multi-token string
+            elif arg.startswith('"'):
+                string_buffer = arg[1:]  # Remove opening quote
+                in_string = True
+                i += 1
+
+                # Collect the entire string
+                while i < len(args):
+                    next_arg = args[i]
+                    if next_arg.endswith('"'):
+                        # End of the string found
+                        string_buffer += " " + next_arg[:-1]  # Remove closing quote
+                        i += 1
+                        break
+                    else:
+                        string_buffer += " " + next_arg
+                        i += 1
+
+                # Output the complete string
+                output.append(f'PUSH_CONST "{string_buffer}"')
+                output.append("PRINT_VALUE")
+                string_buffer = ""
+                in_string = False
+
+            # Part of an expression
             else:
-                # This is part of an expression - add it to the buffer
                 expr_buffer.append(arg)
-                last_was_separator = False
                 i += 1
 
-        # Process any remaining expression in the buffer
+        # Process any remaining expression
         if expr_buffer:
             expr_str = " ".join(expr_buffer)
             try:
                 expr_code = evaluate_expression(expr_str)
                 output.extend(expr_code)
                 output.append("PRINT_VALUE")
-            except EvaluationError as e:
-                logger.warning(f"Error evaluating expression '{expr_str}': {e}")
+            except Exception as e:
+                logger.error(f"Error evaluating expression '{expr_str}': {e}")
                 output.append(f"# Failed to evaluate: {expr_str}")
 
-        # Unless the last token was a separator (comma or semicolon),
-        # add a newline at the end of the PRINT statement
-        if not last_was_separator:
+        # Add final newline unless the statement ended with a separator
+        if not (args and args[-1] in [",", ";"]):
             output.append("PRINT_NEWLINE")
 
         return output
