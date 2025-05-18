@@ -3,9 +3,11 @@ import os
 import sys
 import json
 
-from c64basic_compiler.compiler.codegen import generate_code
+# from c64basic_compiler.compiler.codegen import generate_code
+from c64basic_compiler.pseudocode.codegen import generate_code
 from c64basic_compiler.compiler.parser import parse
 from c64basic_compiler.compiler.prg_writer import write_prg
+from c64basic_compiler.compiler.pseudocode_writer import write_pseudocode
 from c64basic_compiler.compiler.tokenizer import tokenize
 from c64basic_compiler.common.compile_context import CompileContext
 
@@ -72,10 +74,21 @@ def main() -> None:
 
     logger.debug(f"Compile context: {ctx}")
 
-    binary = generate_code(ast, ctx)
+    # Generate pseudocode
+    pseudo_code = generate_code(ast, ctx)
+    logger.debug(f"Generated pseudocode: {json.dumps(pseudo_code, indent=4)}")
 
-    write_prg(output_file, binary)
-    print(f"Binary file PRG succesfully generated: {output_file}")
+    # Write the pseudocode to a text file
+    pseudocode_file = os.path.splitext(output_file)[0] + ".pseudocode"
+    write_pseudocode(pseudocode_file, pseudo_code)
+    logger.debug(f"Pseudocode file PRG succesfully generated: {pseudocode_file}")
+
+    # Write the pseudocode to a binary file
+
+    # binary = generate_code(ast, ctx)
+
+    # write_prg(output_file, binary)
+    # print(f"Binary file PRG succesfully generated: {output_file}")
 
 
 if __name__ == "__main__":

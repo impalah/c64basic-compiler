@@ -1,4 +1,10 @@
 10 LET A$="HELLO"
 20 LET B$="WORLD"
-30 PRINT A$
-70 END
+30 C$ = "SAYONARA"
+40 LET D$ = A$ + " " + B$
+50 X = 1 + 3 * (2 + 4)
+60 PRINT D$
+70 PRINT X
+80 Y = X
+90 PRINT Y
+100 END

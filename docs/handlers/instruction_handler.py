@@ -11,28 +11,28 @@ class InstructionHandler:
         self.context: CompileContext = context  # line_addresses, symbol_table, etc.
         self.current_address: Optional[int] = None  # Set externally in generate_code()
 
-    # def size(self) -> int:
-    #     """Calculate the size of the instruction in bytes.
+    def size(self) -> int:
+        """Calculate the size of the instruction in bytes.
 
-    #     Raises:
-    #         NotImplementedError: _description_
+        Raises:
+            NotImplementedError: _description_
 
-    #     Returns:
-    #         int: _description_
-    #     """
-    #     raise NotImplementedError
+        Returns:
+            int: _description_
+        """
+        raise NotImplementedError
 
-    # def emit(self) -> bytearray:
-    #     """Generate the machine code for the instruction.
+    def emit(self) -> bytearray:
+        """Generate the machine code for the instruction.
 
-    #     Raises:
-    #         NotImplementedError: _description_
+        Raises:
+            NotImplementedError: _description_
 
-    #     Returns:
-    #         bytearray: _description_
-    #     """
+        Returns:
+            bytearray: _description_
+        """
 
-    #     raise NotImplementedError
+        raise NotImplementedError
 
     def pseudocode(self) -> list[str]:
         """Generate the pseudocode for the instruction.
