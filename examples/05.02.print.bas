@@ -1,0 +1,3 @@
+10 LET A=SIN(PI / 2) + COS(0)
+30 PRINT "A IS: "; A
+100 END

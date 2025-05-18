@@ -6,23 +6,20 @@ def parse_print_args(tokens: List[str]) -> List[Dict[str, str]]:
     Parse and normalize tokens from a PRINT statement.
 
     This function converts raw tokens (from tokenizer) into a structured list
-    of print items, such as strings or variables.
+    of print items, such as strings, variables, or expressions.
 
     Each item is represented as:
         {"type": "string", "value": "HELLO"}
         {"type": "variable", "value": "A"}
-        (future: {"type": "expression", "value": "A + B"})
+        {"type": "expression", "value": "A + B"}
+        {"type": "separator", "value": ","}  # for comma
+        {"type": "separator", "value": ";"}  # for semicolon
 
     Supported:
-    - Strings between double quotes, even with spaces/semicolons
+    - Strings between double quotes
     - Variables (numeric or ending in $)
+    - Expressions with operators (+, -, *, /, etc.)
     - Separation by `,` and `;`
-
-    Limitations:
-    - Expressions with `+`, `-`, etc. are NOT supported yet.
-
-    Raises:
-        Exception: If unsupported operations like `+` are detected.
 
     Args:
         tokens (List[str]): Raw token list for the PRINT statement.
@@ -34,40 +31,50 @@ def parse_print_args(tokens: List[str]) -> List[Dict[str, str]]:
     result = []
     buffer = ""
     in_string = False
+    expr_buffer = []
 
     for raw in tokens:
-        # First split by , and ;
-        for part in raw.split(","):
-            for subpart in part.split(";"):
-                token = subpart.strip()
-                if not token:
-                    continue
+        # Check for separators first
+        if raw == ",":
+            # Flush any pending expression
+            if expr_buffer:
+                result.append({"type": "expression", "value": " ".join(expr_buffer)})
+                expr_buffer = []
+            result.append({"type": "separator", "value": ","})
+            continue
 
-                # Check for inline operators (expressions)
-                if "+" in token or "-" in token or "*" in token or "/" in token:
-                    raise Exception(
-                        f"Expressions like '{token}' are not supported in PRINT yet."
-                    )
+        if raw == ";":
+            # Flush any pending expression
+            if expr_buffer:
+                result.append({"type": "expression", "value": " ".join(expr_buffer)})
+                expr_buffer = []
+            result.append({"type": "separator", "value": ";"})
+            continue
 
-                # Handle strings
-                if token.startswith('"') and not token.endswith('"'):
-                    buffer = token
-                    in_string = True
-                    continue
-                elif in_string:
-                    buffer += " " + token
-                    if token.endswith('"'):
-                        result.append({"type": "string", "value": buffer.strip('"')})
-                        buffer = ""
-                        in_string = False
-                    continue
+        # Handle string literals
+        if raw.startswith('"') and raw.endswith('"'):
+            # It's a complete string
+            result.append({"type": "string", "value": raw.strip('"')})
+            continue
+        elif raw.startswith('"'):
+            # Start of a string that contains spaces
+            buffer = raw
+            in_string = True
+            continue
+        elif in_string:
+            buffer += " " + raw
+            if raw.endswith('"'):
+                # End of the string
+                result.append({"type": "string", "value": buffer.strip('"')})
+                buffer = ""
+                in_string = False
+            continue
 
-                # Standalone quoted string
-                if token.startswith('"') and token.endswith('"'):
-                    result.append({"type": "string", "value": token.strip('"')})
-                    continue
+        # It's part of an expression
+        expr_buffer.append(raw)
 
-                # Else: it's a variable (possibly with $)
-                result.append({"type": "variable", "value": token.upper()})
+    # Don't forget any pending expression
+    if expr_buffer:
+        result.append({"type": "expression", "value": " ".join(expr_buffer)})
 
     return result

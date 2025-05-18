@@ -1,0 +1,5 @@
+50 X = 1 + 3 * (2 + 4)
+70 PRINT X
+80 Y = X
+90 PRINT Y
+100 END

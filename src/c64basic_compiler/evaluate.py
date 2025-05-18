@@ -69,7 +69,13 @@ def shunting_yard(tokens: list[str]) -> list[Token]:
 
     def handle_function(token: str) -> None:
         """Handle functions by pushing them onto stack."""
-        stack.append(token)
+        # Special case for no-argument functions like PI
+        if token in FUNCTION_TABLE and FUNCTION_TABLE[token].arity == 0:
+            # Functions with no arguments can be directly added to output
+            output.append(token)
+        else:
+            # Regular functions that expect arguments are pushed to stack
+            stack.append(token)
 
     def handle_left_paren(token: str) -> None:
         """Handle opening parentheses."""
@@ -120,7 +126,7 @@ def shunting_yard(tokens: list[str]) -> list[Token]:
         elif re.fullmatch(r"-?\d+\.\d+|-?\d+", token):
             handle_number(token)
         elif upper_token in FUNCTION_TABLE:
-            handle_function(upper_token)
+            handle_function(upper_token)  # Using the updated handle_function
         elif token == "(":
             handle_left_paren(token)
         elif token == ")":
@@ -178,8 +184,19 @@ def generate_pseudocode(rpn: list[Token], verbose: bool = False) -> list[str]:
 
     def handle_function(token: str, upper_token: str) -> None:
         """Handle function calls and operators with type checking."""
-        func: BasicFunction = FUNCTION_TABLE[upper_token]
+        func = FUNCTION_TABLE[upper_token]
 
+        # Special handling for functions with no arguments (like PI)
+        if func.arity == 0:
+            # For zero-argument functions, we don't need to pop anything from stack
+            out_type = func.return_type
+            stack.append(out_type)
+            code.append(f"CALL {upper_token}")
+            if verbose:
+                print_stack(stack, f"after CALL {upper_token}")
+            return
+
+        # Regular function processing for functions with arguments
         # Check if we have enough operands
         if len(stack) < func.arity:
             raise NotEnoughOperandsError(f"Not enough operands for {token}")
@@ -287,6 +304,7 @@ def main() -> None:
         "PEEK(49152) + 1",
         "PEEK(49152) + PEEK(49153)",
         "PEEK(49152) + PEEK(INT(SQR(AB)) * 2)",
+        "PI / 2",
     ]
 
     for expression in expresions:

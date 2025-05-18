@@ -1,0 +1,5 @@
+10 LET A$="HELLO"
+20 LET B$="WORLD"
+40 LET D$ = A$ + " " + B$
+60 PRINT D$
+100 END
