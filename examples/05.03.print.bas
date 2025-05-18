@@ -1,0 +1,4 @@
+10 LET A=SIN(PI / 2) + COS(0)
+20 B = INT(3.7 + RND(0))
+30 PRINT "VALUES: "; A; " "; B;
+100 END

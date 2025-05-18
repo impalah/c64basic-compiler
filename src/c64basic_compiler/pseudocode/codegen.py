@@ -11,15 +11,38 @@ import c64basic_compiler.common.opcodes_6502 as opcodes
 
 def extract_jump_targets(ast: list[dict]) -> set[int]:
     targets = set()
+
+    # Track FOR loops to handle NEXT statements
+    for_loops = {}  # Maps line numbers to loop variables
+
     for instr in ast:
         cmd = instr["command"].upper()
         args = instr.get("args", [])
+        line = instr["line"]
+
         if cmd in {"GOTO", "GOSUB"} and args:
             try:
                 targets.add(int(args[0]))
             except ValueError:
                 pass  # ignora valores no válidos (por ejemplo, variables aún no resueltas)
-        # puedes añadir aquí IF...THEN GOTO
+
+        # Handle IF...THEN line_number
+        elif cmd == "IF" and "THEN" in args:
+            try:
+                then_index = args.index("THEN")
+                if then_index < len(args) - 1:
+                    # Check if the argument after THEN is a line number
+                    target = args[then_index + 1]
+                    if target.isdigit():
+                        targets.add(int(target))
+            except (ValueError, IndexError):
+                pass
+
+        # Track FOR loops
+        elif cmd == "FOR" and len(args) >= 3:
+            # Store the line number and loop variable
+            for_loops[line] = args[0]  # The loop variable
+
     return targets
 
 

@@ -42,16 +42,44 @@ def tokenize(expr: str) -> list[str]:
     pattern_strings = r'"[^"]*"'
     expr_with_placeholders = re.sub(pattern_strings, replace_string, expr)
 
+    # Replace multi-character operators and keywords with placeholders
+    operator_replacements = {
+        "<=": "__OP_LE__",
+        ">=": "__OP_GE__",
+        "<>": "__OP_NE__",
+        "AND": "__OP_AND__",
+        "OR": "__OP_OR__",
+        "NOT": "__OP_NOT__",
+        "TO": "__KW_TO__",  # Add TO keyword
+        "STEP": "__KW_STEP__",  # Add STEP keyword
+    }
+
+    for op, placeholder in operator_replacements.items():
+        expr_with_placeholders = re.sub(
+            re.escape(op),
+            placeholder,
+            expr_with_placeholders,
+            flags=re.IGNORECASE,
+        )
+
     # Now remove spaces outside string literals
     expr_no_spaces = expr_with_placeholders.replace(" ", "")
 
-    # Tokenize the expression
+    # Restore multi-character operators
+    reverse_replacements = {v: k for k, v in operator_replacements.items()}
+    for placeholder, op in reverse_replacements.items():
+        expr_no_spaces = expr_no_spaces.replace(placeholder, op)
+
+    # Tokenize the expression - Make sure we handle all operators and keywords
     pattern = (
-        r"("
-        + string_marker
-        + r"\d+_|(?<![A-Za-z0-9\$\)])-?\d+\.\d+|-?\d+|[A-Za-z\$][A-Za-z0-9\$]*|[-+*/()])"
+        r"(" + string_marker + r"\d+_|(?<![A-Za-z0-9\$\)])-?\d+\.\d+|-?\d+|"
+        r"[A-Za-z\$][A-Za-z0-9\$]*|<=|>=|<>|AND|OR|NOT|TO|STEP|[-+*/()=<>])"
     )
-    tokens = re.findall(pattern, expr_no_spaces)
+
+    tokens = re.findall(pattern, expr_no_spaces, re.IGNORECASE)
+
+    # Print all tokens for debugging
+    print(f"Parsed tokens from '{expr}': {tokens}")
 
     # Restore string literals
     result = []
@@ -59,7 +87,13 @@ def tokenize(expr: str) -> list[str]:
         if token.startswith(string_marker):
             result.append(string_literals[token])
         else:
-            result.append(token)
+            result.append(
+                token.upper()
+                if token.upper() in ("AND", "OR", "NOT", "TO", "STEP")
+                else token
+            )
+
+    print(f"Final tokens: {result}")
 
     return result
 
@@ -360,3 +394,10 @@ def main() -> None:
             # Catch-all for any other exceptions
             print(f"Unexpected error evaluating expression '{expression}': {e}")
             print("-" * 40)
+
+
+# Add a debug function to print the function table
+def debug_function_table():
+    print("\nDEBUG: Available functions in FUNCTION_TABLE:")
+    for name, function in FUNCTION_TABLE.items():
+        print(f"  - {name} (arity: {function.arity}, return: {function.return_type})")

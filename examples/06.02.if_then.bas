@@ -1,0 +1,6 @@
+10 LET A = 5
+30 IF (A > 5) * (A < 10) THEN PRINT "OK (AND)"
+40 IF (A < 5) + (A > 10) THEN PRINT "FUERA (OR)"
+50 IF (A < 5) * (A > 10) THEN PRINT "FUERA (AND)"
+60 IF (A < 5) + (A > 10) THEN PRINT "OK (OR)"
+150 END
