@@ -39,8 +39,9 @@ def _build_function_table() -> Dict[str, BasicFunction]:
                     and obj.name  # Only include classes with a name
                 ):
                     function_table[obj.name] = obj()
-                    # Print for debugging
-                    print(f"Registered function: {obj.name}")
+
+                    # # Print for debugging
+                    # print(f"Registered function: {obj.name}")
 
     return function_table
 

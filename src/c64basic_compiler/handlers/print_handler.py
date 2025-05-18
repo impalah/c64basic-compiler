@@ -1,14 +1,12 @@
 # c64basic_compiler/handlers/print_handler.py
 
-from c64basic_compiler.handlers.instruction_handler import (
-    InstructionHandler,
-)
+from c64basic_compiler.handlers.instruction_handler import InstructionHandler
 import c64basic_compiler.common.opcodes_6502 as opcodes
 import c64basic_compiler.common.kernal_routines as kernal
 from c64basic_compiler.common.petscii_map import PETSCII_CONTROL
 from c64basic_compiler.utils.logging import logger
 from c64basic_compiler.evaluate import evaluate_expression
-from c64basic_compiler.exceptions import EvaluationError
+from c64basic_compiler.exceptions import EvaluationError, EvaluationHandlerError
 from typing import List, Dict, Any
 import re
 
@@ -38,6 +36,9 @@ class PrintHandler(InstructionHandler):
 
         Returns:
             list[str]: List of pseudocode instructions
+
+        Raises:
+            EvaluationHandlerError: When expression evaluation fails
         """
         logger.debug("Generating pseudocode for PRINT instruction")
         args = self.instr["args"]
@@ -67,8 +68,12 @@ class PrintHandler(InstructionHandler):
                         output.extend(expr_code)
                         output.append("PRINT_VALUE")
                     except Exception as e:
-                        logger.error(f"Error evaluating expression '{expr_str}': {e}")
-                        output.append(f"# Failed to evaluate: {expr_str}")
+                        logger.error(
+                            f"(PrintHandler 1) Error evaluating expression '{expr_str}': {e}"
+                        )
+                        raise EvaluationHandlerError(
+                            f"Failed to evaluate expression in PRINT: '{expr_str}': {str(e)}"
+                        )
                     expr_buffer = []
 
                 # Add separator instruction
@@ -123,8 +128,12 @@ class PrintHandler(InstructionHandler):
                 output.extend(expr_code)
                 output.append("PRINT_VALUE")
             except Exception as e:
-                logger.error(f"Error evaluating expression '{expr_str}': {e}")
-                output.append(f"# Failed to evaluate: {expr_str}")
+                logger.error(
+                    f"(PrintHandler 2) Error evaluating expression '{expr_str}': {e}"
+                )
+                raise EvaluationHandlerError(
+                    f"Failed to evaluate expression in PRINT: '{expr_str}': {str(e)}"
+                )
 
         # Add final newline unless the statement ended with a separator
         if not (args and args[-1] in [",", ";"]):

@@ -10,8 +10,13 @@ def tokenize(source: str) -> list[tuple[int, list[str]]]:
     """
     import re
 
-    # Define a regex pattern to split tokens correctly
-    token_pattern = r'("[^"]*"|\w+\$?|\=|[^\s:])'
+    # Updated regex pattern to handle decimal numbers as single tokens
+    # The order of these patterns is important:
+    # 1. String literals: "anything"
+    # 2. Decimal numbers: 3.14, 0.5, etc.
+    # 3. Variable names with dollar sign: A$, NAME$, etc.
+    # 4. Other tokens: words, operators, etc.
+    token_pattern = r'("[^"]*"|\d+\.\d+|\w+\$?|\=|[^\s:])'
 
     lines = source.strip().splitlines()
     result = []
@@ -42,8 +47,91 @@ def tokenize(source: str) -> list[tuple[int, list[str]]]:
             statements.append(current_stmt.strip())
 
         for stmt in statements:
-            # Use regex to tokenize the statement
+            # Use regex to tokenize the statement, capturing decimal numbers correctly
             tokens = re.findall(token_pattern, stmt)
+            # Debug output to verify tokenization
+            # print(f"Statement: '{stmt}', Tokens: {tokens}")
             result.append((line_number, tokens))
 
     return result
+
+
+def tokenize_line(line: str) -> list[str]:
+    """
+    Tokenize a line of BASIC code, preserving string literals and decimal numbers.
+
+    Args:
+        line: A single line of BASIC code
+
+    Returns:
+        List of tokens
+    """
+    tokens = []
+    i = 0
+    in_quotes = False
+    quote_buffer = ""
+    token_buffer = ""
+
+    while i < len(line):
+        char = line[i]
+
+        # Handle string literals
+        if char == '"':
+            if in_quotes:
+                # End of string
+                quote_buffer += char
+                tokens.append(quote_buffer)
+                quote_buffer = ""
+                in_quotes = False
+            else:
+                # Start of string
+                if token_buffer:
+                    tokens.append(token_buffer)
+                    token_buffer = ""
+                quote_buffer = char
+                in_quotes = True
+            i += 1
+            continue
+
+        if in_quotes:
+            quote_buffer += char
+            i += 1
+            continue
+
+        # Handle decimal numbers
+        if char.isdigit() and token_buffer == "":
+            number_buffer = char
+            i += 1
+            # Look ahead for decimal point and more digits
+            while i < len(line) and (line[i].isdigit() or line[i] == "."):
+                number_buffer += line[i]
+                i += 1
+            tokens.append(number_buffer)
+            continue
+
+        # Handle regular tokens (separated by spaces)
+        if char.isspace():
+            if token_buffer:
+                tokens.append(token_buffer)
+                token_buffer = ""
+            i += 1
+            continue
+
+        # Handle special characters as separate tokens
+        if char in "()+-*/^=,;":
+            if token_buffer:
+                tokens.append(token_buffer)
+                token_buffer = ""
+            tokens.append(char)
+            i += 1
+            continue
+
+        # Add character to current token
+        token_buffer += char
+        i += 1
+
+    # Add any remaining token
+    if token_buffer:
+        tokens.append(token_buffer)
+
+    return tokens

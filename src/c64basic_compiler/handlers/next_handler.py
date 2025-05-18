@@ -1,5 +1,6 @@
 from c64basic_compiler.handlers.instruction_handler import InstructionHandler
 from c64basic_compiler.utils.logging import logger
+from c64basic_compiler.exceptions import InvalidSyntaxError
 
 
 class NextHandler(InstructionHandler):
@@ -28,6 +29,9 @@ class NextHandler(InstructionHandler):
 
         Returns:
             list[str]: List of pseudocode instructions
+
+        Raises:
+            InvalidSyntaxError: When the NEXT statement has invalid syntax
         """
         logger.debug("Generating pseudocode for NEXT instruction")
         args = self.instr["args"]

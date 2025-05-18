@@ -1,7 +1,11 @@
 from c64basic_compiler.handlers.instruction_handler import InstructionHandler
 from c64basic_compiler.utils.logging import logger
 from c64basic_compiler.evaluate import evaluate_expression
-from c64basic_compiler.exceptions import EvaluationError
+from c64basic_compiler.exceptions import (
+    EvaluationError,
+    InvalidSyntaxError,
+    EvaluationHandlerError,
+)
 
 
 class ForHandler(InstructionHandler):
@@ -31,6 +35,10 @@ class ForHandler(InstructionHandler):
 
         Returns:
             list[str]: List of pseudocode instructions
+
+        Raises:
+            InvalidSyntaxError: When the FOR statement has invalid syntax
+            EvaluationHandlerError: When an expression cannot be evaluated
         """
         logger.debug("Generating pseudocode for FOR instruction")
         args = self.instr["args"]
@@ -38,7 +46,9 @@ class ForHandler(InstructionHandler):
         # Check for valid syntax
         if len(args) < 4 or args[1] != "=" or "TO" not in args:
             logger.error("Invalid FOR statement syntax")
-            return ["# Invalid FOR statement syntax"]
+            raise InvalidSyntaxError(
+                "Invalid FOR statement syntax: requires variable = start TO end [STEP increment]"
+            )
 
         # Extract components
         loop_var = args[0]
@@ -89,4 +99,4 @@ class ForHandler(InstructionHandler):
 
         except EvaluationError as e:
             logger.error(f"Error evaluating FOR expressions: {e}")
-            return [f"# Failed to evaluate FOR: {' '.join(args)}"]
+            raise EvaluationHandlerError(f"Failed to evaluate FOR expression: {str(e)}")

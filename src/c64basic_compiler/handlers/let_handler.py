@@ -5,6 +5,7 @@ import c64basic_compiler.common.opcodes_6502 as opcodes
 from c64basic_compiler.handlers.instruction_handler import InstructionHandler
 from c64basic_compiler.utils.logging import logger
 from c64basic_compiler.evaluate import evaluate_expression
+from c64basic_compiler.exceptions import InvalidSyntaxError, EvaluationHandlerError
 
 # TODO: Make configurable
 # Base address for string area in memory
@@ -29,13 +30,17 @@ class LetHandler(InstructionHandler):
 
         Returns:
             list[str]: List of pseudocode instructions
+
+        Raises:
+            InvalidSyntaxError: When the LET statement has invalid syntax
+            EvaluationHandlerError: When the expression cannot be evaluated
         """
         # Extract variable name (always first argument)
         var_name = self.instr["args"][0]
 
         # Find the expression part (everything after the '=')
         if len(self.instr["args"]) >= 3 and self.instr["args"][1] == "=":
-            # Join the expression parts into a string for evaluation
+            # Join the expression parts into a string for evaluation, preserving spacing
             expression = " ".join(self.instr["args"][2:])
 
             logger.debug(f"Processing LET: {var_name} = {expression}")
@@ -50,14 +55,15 @@ class LetHandler(InstructionHandler):
                 logger.debug(f"Generated pseudocode for LET: {expr_code}")
                 return expr_code
             except Exception as e:
-                logger.error(f"Error evaluating expression '{expression}': {e}")
-                # Return a simpler instruction as fallback
-                return [
-                    f"# Failed to evaluate: {var_name} = {expression}",
-                    f"LOAD_CONST 0",
-                    f"STORE {var_name}",
-                ]
+                logger.error(
+                    f"(LetHandler) Error evaluating expression '{expression}': {e}"
+                )
+                raise EvaluationHandlerError(
+                    f"Failed to evaluate expression in assignment: {var_name} = {expression}: {str(e)}"
+                )
         else:
             # Invalid LET statement format
             logger.warning(f"Invalid LET statement format: {self.instr}")
-            return [f"# Invalid LET statement: {' '.join(self.instr['args'])}"]
+            raise InvalidSyntaxError(
+                f"Invalid LET statement: {' '.join(self.instr['args'])}"
+            )

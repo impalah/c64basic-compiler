@@ -11,7 +11,7 @@ from c64basic_compiler.exceptions import (
     ExpressionReduceError,
     UnhandledTokenError,
 )
-
+from c64basic_compiler.utils.logging import logger
 
 # Use lowercase type hints instead of capitalized ones
 Token = Union[str, float, int]
@@ -28,7 +28,77 @@ def tokenize(expr: str) -> list[str]:
     Returns:
         A list of tokens
     """
-    # First, find and extract string literals to protect their content
+    # First check for decimal numbers in the input and join them
+    result = []
+    i = 0
+    in_number = False
+    decimal_buffer = ""
+
+    # Pre-process to handle decimal numbers properly
+    while i < len(expr):
+        # If we're building a number
+        if in_number:
+            if expr[i].isdigit() or expr[i] == ".":
+                decimal_buffer += expr[i]
+                i += 1
+            else:
+                # End of number - add it to results
+                result.append(decimal_buffer)
+                decimal_buffer = ""
+                in_number = False
+        else:
+            # Check if this is the start of a number
+            if expr[i].isdigit():
+                in_number = True
+                decimal_buffer = expr[i]
+                i += 1
+            else:
+                # Just a regular character
+                result.append(expr[i])
+                i += 1
+
+    # Don't forget any remaining decimal number
+    if decimal_buffer:
+        result.append(decimal_buffer)
+
+    # Now join it back for the rest of the processing
+    expr = "".join(result)
+
+    # First, let's normalize spacing around logical operators to make them easier to identify
+    expr = re.sub(r"\bAND\b", " AND ", expr, flags=re.IGNORECASE)
+    expr = re.sub(r"\bOR\b", " OR ", expr, flags=re.IGNORECASE)
+    expr = re.sub(r"\bNOT\b", " NOT ", expr, flags=re.IGNORECASE)
+
+    # Handle decimal numbers before tokenization by joining digits and decimal points
+    # Replace decimal numbers with placeholders to protect them
+    decimal_pattern = r"(\d+\.\d+)"
+    decimal_literals = {}
+    decimal_marker = "__DECIMAL_LITERAL_"
+
+    def replace_decimal(match):
+        nonlocal decimal_literals
+        placeholder = f"{decimal_marker}{len(decimal_literals)}_"
+        decimal_literals[placeholder] = match.group(0)
+        return (
+            f" {placeholder} "  # Add spaces to ensure it's separated from other tokens
+        )
+
+    expr = re.sub(decimal_pattern, replace_decimal, expr)
+
+    # Extract and protect integer literals too
+    int_pattern = r"(?<![a-zA-Z0-9_\.])\d+(?![a-zA-Z0-9_\.])"
+    int_literals = {}
+    int_marker = "__INT_LITERAL_"
+
+    def replace_int(match):
+        nonlocal int_literals
+        placeholder = f"{int_marker}{len(int_literals)}_"
+        int_literals[placeholder] = match.group(0)
+        return f" {placeholder} "  # Add spaces for separation
+
+    expr = re.sub(int_pattern, replace_int, expr)
+
+    # Find and extract string literals to protect their content
     string_literals = {}
     string_marker = "__STRING_LITERAL_"
 
@@ -36,65 +106,45 @@ def tokenize(expr: str) -> list[str]:
         nonlocal string_literals
         placeholder = f"{string_marker}{len(string_literals)}_"
         string_literals[placeholder] = match.group(0)
-        return placeholder
+        return f" {placeholder} "  # Add spaces for separation
 
     # Replace string literals with placeholders
     pattern_strings = r'"[^"]*"'
     expr_with_placeholders = re.sub(pattern_strings, replace_string, expr)
 
-    # Replace multi-character operators and keywords with placeholders
-    operator_replacements = {
-        "<=": "__OP_LE__",
-        ">=": "__OP_GE__",
-        "<>": "__OP_NE__",
-        "AND": "__OP_AND__",
-        "OR": "__OP_OR__",
-        "NOT": "__OP_NOT__",
-        "TO": "__KW_TO__",  # Add TO keyword
-        "STEP": "__KW_STEP__",  # Add STEP keyword
-    }
+    # Pre-process expression to add spaces around operators for proper tokenization
+    for op in ["<=", ">=", "<>", "=", "<", ">", "+", "-", "*", "/", "^", "(", ")"]:
+        expr_with_placeholders = expr_with_placeholders.replace(op, f" {op} ")
 
-    for op, placeholder in operator_replacements.items():
-        expr_with_placeholders = re.sub(
-            re.escape(op),
-            placeholder,
-            expr_with_placeholders,
-            flags=re.IGNORECASE,
-        )
+    # Split the expression by whitespace to get individual tokens
+    raw_tokens = [token for token in expr_with_placeholders.split() if token.strip()]
 
-    # Now remove spaces outside string literals
-    expr_no_spaces = expr_with_placeholders.replace(" ", "")
-
-    # Restore multi-character operators
-    reverse_replacements = {v: k for k, v in operator_replacements.items()}
-    for placeholder, op in reverse_replacements.items():
-        expr_no_spaces = expr_no_spaces.replace(placeholder, op)
-
-    # Tokenize the expression - Make sure we handle all operators and keywords
-    pattern = (
-        r"(" + string_marker + r"\d+_|(?<![A-Za-z0-9\$\)])-?\d+\.\d+|-?\d+|"
-        r"[A-Za-z\$][A-Za-z0-9\$]*|<=|>=|<>|AND|OR|NOT|TO|STEP|[-+*/()=<>])"
-    )
-
-    tokens = re.findall(pattern, expr_no_spaces, re.IGNORECASE)
-
-    # Print all tokens for debugging
-    print(f"Parsed tokens from '{expr}': {tokens}")
-
-    # Restore string literals
+    # Process each token to handle the special cases
     result = []
-    for token in tokens:
-        if token.startswith(string_marker):
+    i = 0
+    while i < len(raw_tokens):
+        token = raw_tokens[i]
+
+        # Restore decimal number placeholders
+        if token.startswith(decimal_marker):
+            result.append(decimal_literals[token])
+        # Restore integer placeholders
+        elif token.startswith(int_marker):
+            result.append(int_literals[token])
+        # Restore string literal placeholders
+        elif token.startswith(string_marker):
             result.append(string_literals[token])
+        # Handle logical operators (making sure they're uppercase)
+        elif token.upper() in ["AND", "OR", "NOT"]:
+            result.append(token.upper())
+        # Handle other tokens
         else:
-            result.append(
-                token.upper()
-                if token.upper() in ("AND", "OR", "NOT", "TO", "STEP")
-                else token
-            )
+            result.append(token)
 
-    print(f"Final tokens: {result}")
+        i += 1
 
+    logger.debug(f"Tokenize input: '{expr}'")
+    logger.debug(f"Final tokens: {result}")
     return result
 
 
@@ -173,11 +223,31 @@ def shunting_yard(tokens: list[str]) -> list[Token]:
 
     def handle_operator(token: str) -> None:
         """Handle operators with proper precedence."""
-        # While there's an operator with higher precedence on the stack
+        # Define operator precedence (higher means higher precedence)
+        precedence = {
+            "OR": 1,
+            "AND": 2,
+            "NOT": 3,
+            "=": 4,
+            "<": 4,
+            ">": 4,
+            "<=": 4,
+            ">=": 4,
+            "<>": 4,
+            "+": 5,
+            "-": 5,
+            "*": 6,
+            "/": 6,
+            "^": 7,
+        }
+
+        token_precedence = precedence.get(token, 0)
+
+        # While there's an operator with higher or equal precedence on the stack
         while (
             stack
-            and stack[-1] in FUNCTION_TABLE
-            and FUNCTION_TABLE[stack[-1]].arity == 2
+            and stack[-1] in precedence
+            and precedence.get(stack[-1], 0) >= token_precedence
         ):
             output.append(stack.pop())
 
@@ -188,24 +258,70 @@ def shunting_yard(tokens: list[str]) -> list[Token]:
         output.append(token)
 
     # Process each token
-    for token in tokens:
-        upper_token: str = token.upper()
+    i = 0
+    paren_counter = 0  # Track nesting level of parentheses
 
-        # Dispatch to the appropriate handler based on token type
-        if token.startswith('"') and token.endswith('"'):
+    while i < len(tokens):
+        token = tokens[i]
+        upper_token = token.upper() if isinstance(token, str) else token
+
+        # Debug print
+        logger.debug(f"Processing token: {token}")
+
+        # Update parenthesis counter for tracking
+        if token == "(":
+            paren_counter += 1
+        elif token == ")":
+            paren_counter -= 1
+            if paren_counter < 0:
+                raise MismatchedParenthesesError("Unmatched closing parenthesis")
+
+        # Special case for NOT (unary operator)
+        if upper_token == "NOT":
+            # For NOT, we need to get the next token and apply NOT to it
+            if i + 1 < len(tokens):
+                # Push NOT onto the stack
+                stack.append("NOT")
+            else:
+                raise EvaluationError(f"NOT operator requires an operand")
+
+        # Handle other token types
+        elif isinstance(token, str) and token.startswith('"') and token.endswith('"'):
             handle_string_literal(token)
-        elif re.fullmatch(r"-?\d+\.\d+|-?\d+", token):
+        elif isinstance(token, str) and re.fullmatch(r"-?\d+\.\d+|-?\d+", token):
             handle_number(token)
-        elif upper_token in FUNCTION_TABLE:
-            handle_function(upper_token)  # Using the updated handle_function
+        elif isinstance(token, str) and upper_token in FUNCTION_TABLE:
+            handle_function(upper_token)
         elif token == "(":
             handle_left_paren(token)
         elif token == ")":
             handle_right_paren(token)
-        elif token in FUNCTION_TABLE:
+        elif token in (
+            "AND",
+            "OR",
+            "+",
+            "-",
+            "*",
+            "/",
+            "^",
+            "=",
+            "<>",
+            "<",
+            ">",
+            "<=",
+            ">=",
+        ):
             handle_operator(token)
         else:
             handle_variable(token)
+
+        i += 1
+
+    # Check if all parentheses were matched
+    if paren_counter != 0:
+        raise MismatchedParenthesesError(
+            f"Mismatched parentheses: {paren_counter} unclosed opening parentheses"
+        )
 
     # Process any remaining operators on the stack
     while stack:
@@ -255,6 +371,16 @@ def generate_pseudocode(rpn: list[Token], verbose: bool = False) -> list[str]:
 
     def handle_function(token: str, upper_token: str) -> None:
         """Handle function calls and operators with type checking."""
+        # Debug output
+        logger.debug(f"Handling function/operator: {token}")
+
+        if upper_token not in FUNCTION_TABLE:
+            logger.error(
+                f"WARNING: Function {upper_token} not found in FUNCTION_TABLE!"
+            )
+            logger.error(f"Available functions: {list(FUNCTION_TABLE.keys())}")
+            raise UnhandledTokenError(f"Unknown function: {upper_token}")
+
         func = FUNCTION_TABLE[upper_token]
 
         # Special handling for functions with no arguments (like PI)
@@ -270,7 +396,9 @@ def generate_pseudocode(rpn: list[Token], verbose: bool = False) -> list[str]:
         # Regular function processing for functions with arguments
         # Check if we have enough operands
         if len(stack) < func.arity:
-            raise NotEnoughOperandsError(f"Not enough operands for {token}")
+            raise NotEnoughOperandsError(
+                f"Not enough operands for {token}. Need {func.arity}, have {len(stack)}"
+            )
 
         # Pop arguments from stack (in reverse order)
         args: list[Type] = [stack.pop() for _ in range(func.arity)][::-1]
@@ -388,7 +516,7 @@ def main() -> None:
             print("-" * 40)
         except EvaluationError as e:
             # Now we can handle specific exception types if needed
-            print(f"Error evaluating expression '{expression}': {e}")
+            print(f"(evaluate) Error evaluating expression '{expression}': {e}")
             print("-" * 40)
         except Exception as e:
             # Catch-all for any other exceptions
@@ -401,3 +529,8 @@ def debug_function_table():
     print("\nDEBUG: Available functions in FUNCTION_TABLE:")
     for name, function in FUNCTION_TABLE.items():
         print(f"  - {name} (arity: {function.arity}, return: {function.return_type})")
+
+
+if __name__ == "__main__":
+    main()
+    # debug_function_table()  # Uncomment to debug function table availability

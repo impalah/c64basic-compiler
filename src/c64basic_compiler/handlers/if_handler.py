@@ -1,7 +1,12 @@
 from c64basic_compiler.handlers.instruction_handler import InstructionHandler
 from c64basic_compiler.utils.logging import logger
 from c64basic_compiler.evaluate import evaluate_expression
-from c64basic_compiler.exceptions import EvaluationError
+from c64basic_compiler.exceptions import (
+    EvaluationError,
+    InvalidSyntaxError,
+    CommandProcessingError,
+    EvaluationHandlerError,
+)
 
 
 class IfHandler(InstructionHandler):
@@ -46,7 +51,7 @@ class IfHandler(InstructionHandler):
                 then_index = args.index("GO")
             except ValueError:
                 logger.error("Invalid IF statement: THEN not found")
-                return ["# Invalid IF statement: THEN not found"]
+                raise InvalidSyntaxError("Invalid IF statement: THEN keyword not found")
 
         # Extract condition (everything before THEN)
         condition = " ".join(args[:then_index])
@@ -71,6 +76,9 @@ class IfHandler(InstructionHandler):
             command = action_tokens[0] if action_tokens else ""
             command_args = action_tokens[1:] if len(action_tokens) > 1 else []
 
+            if not command:
+                raise InvalidSyntaxError("IF statement requires a command after THEN")
+
             logger.debug(f"IF inline command: {command} with args {command_args}")
 
             # Generate code for condition evaluation
@@ -87,16 +95,15 @@ class IfHandler(InstructionHandler):
             }
 
             try:
-                # Instead of directly calling get_instruction_handler, handle this differently
-                # We'll dynamically import and initialize the handler
+                # Get handler for the inline command
                 action_handler = self._get_handler_for_instruction(fake_instr)
                 # Generate pseudocode for the action
                 action_code = action_handler.pseudocode()
                 condition_code.extend(action_code)
             except Exception as e:
                 logger.error(f"Error processing inline command: {e}")
-                condition_code.append(
-                    f"# Failed to process command: {command} {' '.join(command_args)}"
+                raise CommandProcessingError(
+                    f"Failed to process command: {command} {' '.join(command_args)}: {str(e)}"
                 )
 
             # End the conditional block
@@ -139,6 +146,9 @@ class IfHandler(InstructionHandler):
 
         Returns:
             list[str]: Pseudocode instructions for evaluating the condition
+
+        Raises:
+            EvaluationHandlerError: If the condition cannot be evaluated
         """
         try:
             # Use the expression evaluator to generate pseudocode for the condition
@@ -161,8 +171,6 @@ class IfHandler(InstructionHandler):
 
         except EvaluationError as e:
             logger.error(f"Error evaluating condition '{condition}': {e}")
-            # Return a simple "false" condition as fallback
-            return [
-                f"# Failed to evaluate condition: {condition}",
-                "PUSH_CONST 0",  # Always false
-            ]
+            raise EvaluationHandlerError(
+                f"Failed to evaluate condition: {condition}: {str(e)}"
+            )

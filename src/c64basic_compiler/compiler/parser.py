@@ -18,13 +18,24 @@ def parse(tokens: list[tuple[int, list[str]]]) -> list[dict[str, Any]]:
         if not parts:
             continue
         command = parts[0].upper()
-        args = parts[1:]
+        args = []
 
-        if command in SUPPORTED_COMMANDS:
-            ast.append({"line": lineno, "command": command, "args": args})
-        elif command[0].isalpha():
-            ast.append({"line": lineno, "command": "LET", "args": [command] + args})
+        # Special case for implicit LET command (no LET keyword)
+        if command not in SUPPORTED_COMMANDS and "=" in parts:
+            command = "LET"
+            args = parts
         else:
-            raise Exception(f"Line {lineno}: Unknown command {command}")
+            # Regular command processing
+            args = parts[1:]  # Skip the command
+
+            # Special handling for IF command to preserve statement structure
+            if command == "IF":
+                # Keep IF and everything as is
+                pass
+
+        # Create the AST node
+        instruction = {"line": lineno, "command": command, "args": args}
+
+        ast.append(instruction)
 
     return ast
