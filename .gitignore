@@ -193,3 +193,9 @@ Icon?
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# Compiler files
+*.pseudocode
+*.pseudocode.*
+*.bytecode
+*.bytecode.*

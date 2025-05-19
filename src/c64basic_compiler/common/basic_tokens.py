@@ -127,5 +127,5 @@ SUPPORTED_COMMANDS = {
     "CLOSE",
     "GET",
     "NEW",
-    "HALT",  # Extensions
+    # "HALT",  # Extensions
 }

@@ -19,7 +19,7 @@ def main() -> None:
         description="BASIC Compiler for  C64 (C64BASIC Compiler)."
     )
     parser.add_argument("-i", "--input", required=True, help="Input .bas file")
-    parser.add_argument("-o", "--output", required=True, help="Output .prg file")
+    parser.add_argument("-o", "--output", required=False, help="Output .prg file")
     parser.add_argument(
         "-f", "--force", action="store_true", help="Overwrite output file if it exists"
     )
@@ -42,6 +42,10 @@ def main() -> None:
     if not os.path.isfile(input_file):
         print(f"Error: Input file '{input_file}' does not exist.")
         sys.exit(1)
+
+    # If not output file is specified, use the input file name with .prg extension
+    if not output_file:
+        output_file = os.path.splitext(input_file)[0] + ".prg"
 
     # Create folders if they do not exist
     output_dir = os.path.dirname(output_file)
