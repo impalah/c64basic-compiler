@@ -113,5 +113,5 @@ def generate_code(ast, ctx: CompileContext) -> list[Any]:
             logger.error(f"Unexpected error at line {line}: {str(e)}")
             pseudo_code.append(f"# Unexpected error at line {line}: {str(e)}")
 
-    logger.debug(f"Pseudocode generated: {pseudo_code}")
+    # logger.debug(f"Pseudocode generated: {pseudo_code}")
     return pseudo_code
