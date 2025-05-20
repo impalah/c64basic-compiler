@@ -49,30 +49,40 @@ class PokeHandler(InstructionHandler):
             logger.error("Invalid POKE syntax - usage: POKE address, value")
             raise InvalidSyntaxError("Invalid POKE syntax - usage: POKE address, value")
 
-        # Split at the comma to get address and value expressions
+        # Find the index of the comma
         comma_index = args.index(",")
-        address_expr = " ".join(args[:comma_index])
-        value_expr = " ".join(args[comma_index + 1 :])
+
+        # Extract the address part and value part
+        address_tokens = args[:comma_index]
+        value_tokens = args[comma_index + 1 :]
+
+        # Join these tokens into strings for the evaluator
+        address_expr = " ".join(address_tokens)
+        value_expr = " ".join(value_tokens)
 
         logger.debug(f"POKE address expression: {address_expr}")
         logger.debug(f"POKE value expression: {value_expr}")
 
         try:
-            # Evaluate the address expression
+            # Evaluar ambas expresiones
             address_code = evaluate_expression(address_expr)
-            result.extend(address_code)
-
-            # Evaluate the value expression
             value_code = evaluate_expression(value_expr)
+
+            # Primero ponemos el valor en la pila
             result.extend(value_code)
 
-            # Validate the types and ranges
-            # The actual range validation will be done at runtime since we
-            # can't know the exact values at compile time for all cases
-            result.append("VALIDATE_INT_RANGE_ADDRESS")  # Ensure address is 0-65535
-            result.append("VALIDATE_INT_RANGE_VALUE")  # Ensure value is 0-255
+            # Luego ponemos la dirección en la pila
+            result.extend(address_code)
 
-            # Finally, emit the POKE instruction
+            # Ahora la dirección está en el tope de la pila y el valor debajo
+            # Por lo que validamos en este orden:
+            result.append("VALIDATE_INT_RANGE_ADDRESS")  # Luego la dirección (0-65535)
+
+            result.append(
+                "VALIDATE_INT_RANGE_VALUE"
+            )  # Primero validamos el valor (0-255)
+
+            # Ejecutar POKE (que espera primero dirección y luego valor)
             result.append("POKE_MEMORY")
 
             return result
