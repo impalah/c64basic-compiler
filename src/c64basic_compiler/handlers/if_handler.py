@@ -164,7 +164,7 @@ class IfHandler(InstructionHandler):
             if not has_comparison:
                 # For expressions without explicit comparison, evaluate to True if non-zero
                 condition_code.append("PUSH_CONST 0")  # Compare with 0
-                condition_code.append("CALL <>")  # Not equal to zero means True
+                condition_code.append("NOT_EQUAL")  # Not equal to zero means True
 
             logger.debug(f"Condition evaluation code: {condition_code}")
             return condition_code

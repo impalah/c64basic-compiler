@@ -3,6 +3,7 @@ import re
 from typing import Union, Optional, Any, cast
 
 from c64basic_compiler.basic import FUNCTION_TABLE, Type
+from c64basic_compiler.basic.basic_function import BasicFunction
 from c64basic_compiler.exceptions import (
     EvaluationError,
     MismatchedParenthesesError,
@@ -263,7 +264,7 @@ def shunting_yard(tokens: list[str]) -> list[Token]:
 
     while i < len(tokens):
         token = tokens[i]
-        upper_token = token.upper() if isinstance(token, str) else token
+        # upper_token = token.upper() if isinstance(token, str) else token
 
         # Debug print
         logger.debug(f"Processing token: {token}")
@@ -277,7 +278,7 @@ def shunting_yard(tokens: list[str]) -> list[Token]:
                 raise MismatchedParenthesesError("Unmatched closing parenthesis")
 
         # Special case for NOT (unary operator)
-        if upper_token == "NOT":
+        if token.upper() == "NOT":
             # For NOT, we need to get the next token and apply NOT to it
             if i + 1 < len(tokens):
                 # Push NOT onto the stack
@@ -290,8 +291,8 @@ def shunting_yard(tokens: list[str]) -> list[Token]:
             handle_string_literal(token)
         elif isinstance(token, str) and re.fullmatch(r"-?\d+\.\d+|-?\d+", token):
             handle_number(token)
-        elif isinstance(token, str) and upper_token in FUNCTION_TABLE:
-            handle_function(upper_token)
+        elif isinstance(token, str) and token.upper() in FUNCTION_TABLE:
+            handle_function(token)
         elif token == "(":
             handle_left_paren(token)
         elif token == ")":
@@ -369,28 +370,26 @@ def generate_pseudocode(rpn: list[Token], verbose: bool = False) -> list[str]:
         if verbose:
             print_stack(stack, f"after PUSH_CONST {token}")
 
-    def handle_function(token: str, upper_token: str) -> None:
+    def handle_function(token: str) -> None:
         """Handle function calls and operators with type checking."""
         # Debug output
         logger.debug(f"Handling function/operator: {token}")
 
-        if upper_token not in FUNCTION_TABLE:
-            logger.error(
-                f"WARNING: Function {upper_token} not found in FUNCTION_TABLE!"
-            )
+        if token.upper() not in FUNCTION_TABLE:
+            logger.error(f"WARNING: Function {token} not found in FUNCTION_TABLE!")
             logger.error(f"Available functions: {list(FUNCTION_TABLE.keys())}")
-            raise UnhandledTokenError(f"Unknown function: {upper_token}")
+            raise UnhandledTokenError(f"Unknown function: {token}")
 
-        func = FUNCTION_TABLE[upper_token]
+        func: BasicFunction = FUNCTION_TABLE[token.upper()]
 
         # Special handling for functions with no arguments (like PI)
         if func.arity == 0:
             # For zero-argument functions, we don't need to pop anything from stack
             out_type = func.return_type
             stack.append(out_type)
-            code.append(f"CALL {upper_token}")
+            code.append(f"{func.mnemonic}")
             if verbose:
-                print_stack(stack, f"after CALL {upper_token}")
+                print_stack(stack, f"after {func.mnemonic}")
             return
 
         # Regular function processing for functions with arguments
@@ -414,10 +413,10 @@ def generate_pseudocode(rpn: list[Token], verbose: bool = False) -> list[str]:
         stack.append(out_type)
 
         # Add instruction to pseudocode
-        code.append(f"CALL {upper_token}")
+        code.append(f"{func.mnemonic}")
 
         if verbose:
-            print_stack(stack, f"after CALL {upper_token}")
+            print_stack(stack, f"after {func.mnemonic}")
 
     def handle_string_literal(token: str) -> None:
         """Handle string literals."""
@@ -440,9 +439,9 @@ def generate_pseudocode(rpn: list[Token], verbose: bool = False) -> list[str]:
         if isinstance(token, (int, float)):
             handle_constant(token)
         elif isinstance(token, str):
-            upper_token: str = token.upper()
-            if upper_token in FUNCTION_TABLE:
-                handle_function(token, upper_token)
+            # upper_token: str = token.upper()
+            if token.upper() in FUNCTION_TABLE:
+                handle_function(token)
             elif token.startswith('"') and token.endswith('"'):
                 handle_string_literal(token)
             else:

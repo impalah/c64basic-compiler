@@ -22,6 +22,7 @@ class AddOperator(BasicFunction):
     """
 
     name = "+"
+    alias = "ADD"
     arity = 2
     arg_types = [Type.ANY, Type.ANY]
     return_type = Type.ANY
@@ -54,6 +55,7 @@ class SubtractOperator(BasicFunction):
     """
 
     name = "-"
+    alias = "SUB"
     arity = 2
     arg_types = [Type.NUM, Type.NUM]
     return_type = Type.NUM
@@ -78,6 +80,7 @@ class MultiplyOperator(BasicFunction):
     """
 
     name = "*"
+    alias = "MUL"
     arity = 2
     arg_types = [Type.NUM, Type.NUM]
     return_type = Type.NUM
@@ -102,6 +105,7 @@ class DivideOperator(BasicFunction):
     """
 
     name = "/"
+    alias = "DIV"
     arity = 2
     arg_types = [Type.NUM, Type.NUM]
     return_type = Type.NUM
@@ -127,6 +131,7 @@ class PowerOperator(BasicFunction):
     """
 
     name = "^"
+    alias = "POW"
     arity = 2
     arg_types = [Type.NUM, Type.NUM]
     return_type = Type.NUM

@@ -20,9 +20,20 @@ class BasicFunction:
     """
 
     name: ClassVar[str] = ""
+    alias: ClassVar[str] = ""
     arity: ClassVar[int] = 0
     arg_types: ClassVar[list[Type]] = []
     return_type: ClassVar[Type] = Type.ANY
+
+    @property
+    def mnemonic(self) -> str:
+        """
+        Get the mnemonic representation of this function.
+
+        Returns:
+            The mnemonic string for this function
+        """
+        return self.alias if self.alias else self.name
 
     def __init__(self) -> None:
         pass

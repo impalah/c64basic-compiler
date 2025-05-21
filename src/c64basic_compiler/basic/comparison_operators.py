@@ -21,6 +21,7 @@ class EqualOperator(BasicFunction):
     """
 
     name = "="
+    alias = "EQUAL"
     arity = 2
     arg_types = [Type.ANY, Type.ANY]
     return_type = Type.INT
@@ -56,6 +57,7 @@ class LessThanOperator(BasicFunction):
     """
 
     name = "<"
+    alias = "LESS"
     arity = 2
     arg_types = [Type.ANY, Type.ANY]
     return_type = Type.INT
@@ -90,6 +92,7 @@ class GreaterThanOperator(BasicFunction):
     """
 
     name = ">"
+    alias = "GREATER"
     arity = 2
     arg_types = [Type.ANY, Type.ANY]
     return_type = Type.INT
@@ -124,6 +127,7 @@ class LessThanEqualOperator(BasicFunction):
     """
 
     name = "<="
+    alias = "LESS_EQUAL"
     arity = 2
     arg_types = [Type.ANY, Type.ANY]
     return_type = Type.INT
@@ -158,6 +162,7 @@ class GreaterThanEqualOperator(BasicFunction):
     """
 
     name = ">="
+    alias = "GREATER_EQUAL"
     arity = 2
     arg_types = [Type.ANY, Type.ANY]
     return_type = Type.INT
@@ -191,6 +196,7 @@ class NotEqualOperator(BasicFunction):
     """
 
     name = "<>"
+    alias = "NOT_EQUAL"
     arity = 2
     arg_types = [Type.ANY, Type.ANY]
     return_type = Type.INT
