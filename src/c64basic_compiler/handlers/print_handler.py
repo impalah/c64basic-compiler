@@ -1,15 +1,10 @@
 # c64basic_compiler/handlers/print_handler.py
 
-from c64basic_compiler.handlers.instruction_handler import InstructionHandler
-import c64basic_compiler.common.opcodes_6502 as opcodes
-import c64basic_compiler.common.kernal_routines as kernal
-from c64basic_compiler.common.petscii_map import PETSCII_CONTROL
-from c64basic_compiler.utils.logging import logger
-from c64basic_compiler.evaluate import evaluate_expression
-from c64basic_compiler.exceptions import EvaluationError, EvaluationHandlerError
-from typing import List, Dict, Any
-import re
 
+from c64basic_compiler.evaluate import evaluate_expression
+from c64basic_compiler.exceptions import EvaluationHandlerError
+from c64basic_compiler.handlers.instruction_handler import InstructionHandler
+from c64basic_compiler.utils.logging import logger
 
 BASE_VARIABLES_ADDR = 0xC000
 

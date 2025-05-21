@@ -1,17 +1,16 @@
 import argparse
+import json
 import os
 import sys
-import json
+
+from c64basic_compiler.common.compile_context import CompileContext
+from c64basic_compiler.compiler.parser import parse
+from c64basic_compiler.compiler.pseudocode_writer import write_pseudocode
+from c64basic_compiler.compiler.tokenizer import tokenize
 
 # from c64basic_compiler.compiler.codegen import generate_code
 from c64basic_compiler.pseudocode.codegen import generate_code
-from c64basic_compiler.compiler.parser import parse
-from c64basic_compiler.compiler.prg_writer import write_prg
-from c64basic_compiler.compiler.pseudocode_writer import write_pseudocode
-from c64basic_compiler.compiler.tokenizer import tokenize
-from c64basic_compiler.common.compile_context import CompileContext
-
-from c64basic_compiler.utils.logging import logger, configure_logger
+from c64basic_compiler.utils.logging import configure_logger, logger
 
 
 def main() -> None:

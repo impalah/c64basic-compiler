@@ -1,9 +1,5 @@
 from dataclasses import dataclass
 
-from typing import Any, Optional
-
-from c64basic_compiler.common.compile_context import CompileContext
-
 
 @dataclass
 class Instruction:

@@ -1,18 +1,15 @@
-import c64basic_compiler.common.basic_tokens as basic_tokens
-from c64basic_compiler.common.petscii_map import PETSCII_ALL
-from c64basic_compiler.compiler.instructions_registry import get_instruction_handler
-from c64basic_compiler.common.compile_context import CompileContext
-from typing import List, Dict, Any
+from typing import Any
 
-from c64basic_compiler.handlers.instruction_handler import InstructionHandler
-from c64basic_compiler.utils.logging import logger
-import c64basic_compiler.common.opcodes_6502 as opcodes
+from c64basic_compiler.common.compile_context import CompileContext
+from c64basic_compiler.compiler.instructions_registry import get_instruction_handler
 from c64basic_compiler.exceptions import (
+    CommandProcessingError,
+    EvaluationHandlerError,
     HandlerError,
     InvalidSyntaxError,
-    EvaluationHandlerError,
-    CommandProcessingError,
 )
+from c64basic_compiler.handlers.instruction_handler import InstructionHandler
+from c64basic_compiler.utils.logging import logger
 
 
 def extract_jump_targets(ast: list[dict]) -> set[int]:
@@ -95,7 +92,7 @@ def generate_code(ast, ctx: CompileContext) -> list[Any]:
             # If this is an assignment (LET), add fallback to set variable to 0
             if instr["command"].upper() == "LET" and len(instr["args"]) >= 1:
                 var_name = instr["args"][0]
-                pseudo_code.append(f"PUSH_CONST 0")
+                pseudo_code.append("PUSH_CONST 0")
                 pseudo_code.append(f"STORE {var_name}")
 
         except CommandProcessingError as e:

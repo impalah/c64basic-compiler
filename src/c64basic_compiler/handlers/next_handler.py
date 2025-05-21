@@ -1,6 +1,5 @@
 from c64basic_compiler.handlers.instruction_handler import InstructionHandler
 from c64basic_compiler.utils.logging import logger
-from c64basic_compiler.exceptions import InvalidSyntaxError
 
 
 class NextHandler(InstructionHandler):

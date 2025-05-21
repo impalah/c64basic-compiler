@@ -1,11 +1,9 @@
 # c64basic_compiler/handlers/let_handler.py
 
-from typing import Any
-import c64basic_compiler.common.opcodes_6502 as opcodes
+from c64basic_compiler.evaluate import evaluate_expression
+from c64basic_compiler.exceptions import EvaluationHandlerError, InvalidSyntaxError
 from c64basic_compiler.handlers.instruction_handler import InstructionHandler
 from c64basic_compiler.utils.logging import logger
-from c64basic_compiler.evaluate import evaluate_expression
-from c64basic_compiler.exceptions import InvalidSyntaxError, EvaluationHandlerError
 
 # TODO: Make configurable
 # Base address for string area in memory

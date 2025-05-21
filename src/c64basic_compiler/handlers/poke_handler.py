@@ -1,12 +1,10 @@
+from c64basic_compiler.evaluate import evaluate_expression
+from c64basic_compiler.exceptions import (
+    EvaluationHandlerError,
+    InvalidSyntaxError,
+)
 from c64basic_compiler.handlers.instruction_handler import InstructionHandler
 from c64basic_compiler.utils.logging import logger
-from c64basic_compiler.evaluate import evaluate_expression
-from c64basic_compiler.basic import Type
-from c64basic_compiler.exceptions import (
-    InvalidSyntaxError,
-    EvaluationHandlerError,
-    TypeMismatchError,
-)
 
 
 class PokeHandler(InstructionHandler):

@@ -1,16 +1,16 @@
 from c64basic_compiler.handlers.end_handler import EndHandler
+from c64basic_compiler.handlers.for_handler import ForHandler
+from c64basic_compiler.handlers.get_handler import GetHandler  # Add import for GET
 from c64basic_compiler.handlers.gosub_handler import GosubHandler
 from c64basic_compiler.handlers.goto_handler import GotoHandler
 from c64basic_compiler.handlers.if_handler import IfHandler
+from c64basic_compiler.handlers.input_handler import InputHandler
 from c64basic_compiler.handlers.let_handler import LetHandler
-from c64basic_compiler.handlers.print_handler import PrintHandler
+from c64basic_compiler.handlers.next_handler import NextHandler
 from c64basic_compiler.handlers.poke_handler import PokeHandler
+from c64basic_compiler.handlers.print_handler import PrintHandler
 from c64basic_compiler.handlers.rem_handler import RemHandler
 from c64basic_compiler.handlers.return_handler import ReturnHandler
-from c64basic_compiler.handlers.for_handler import ForHandler
-from c64basic_compiler.handlers.next_handler import NextHandler
-from c64basic_compiler.handlers.input_handler import InputHandler
-from c64basic_compiler.handlers.get_handler import GetHandler  # Add import for GET
 
 # Create a dictionary of handler classes
 instruction_handlers = {
@@ -40,6 +40,5 @@ def get_instruction_handler(instr, context):
 
 
 # Import IfHandler at the end to avoid circular import
-from c64basic_compiler.handlers.if_handler import IfHandler
 
 instruction_handlers["IF"] = IfHandler

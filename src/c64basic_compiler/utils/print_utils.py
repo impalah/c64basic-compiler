@@ -1,7 +1,4 @@
-from typing import List, Dict
-
-
-def parse_print_args(tokens: List[str]) -> List[Dict[str, str]]:
+def parse_print_args(tokens: list[str]) -> list[dict[str, str]]:
     """
     Parse and normalize tokens from a PRINT statement.
 

@@ -1,6 +1,7 @@
 # c64basic_compiler/compiler/parser.py
 
 from typing import Any
+
 from c64basic_compiler.common.basic_tokens import SUPPORTED_COMMANDS
 
 

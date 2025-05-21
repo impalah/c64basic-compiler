@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, ClassVar
+from typing import ClassVar
 
 
 class Type(Enum):
@@ -50,7 +50,9 @@ class BasicFunction:
         Returns:
             True if types are compatible, False otherwise
         """
-        return all(self._compatible(a, e) for a, e in zip(args, self.arg_types))
+        return all(
+            self._compatible(a, e) for a, e in zip(args, self.arg_types, strict=False)
+        )
 
     def resolve_return_type(self, args: list[Type]) -> Type:
         """

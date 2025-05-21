@@ -1,5 +1,3 @@
-from typing import Any, Optional
-
 from c64basic_compiler.common.compile_context import CompileContext
 
 
@@ -9,7 +7,7 @@ class InstructionHandler:
     def __init__(self, instr: str, context: CompileContext):
         self.instr = instr
         self.context: CompileContext = context  # line_addresses, symbol_table, etc.
-        self.current_address: Optional[int] = None  # Set externally in generate_code()
+        self.current_address: int | None = None  # Set externally in generate_code()
 
     # def size(self) -> int:
     #     """Calculate the size of the instruction in bytes.

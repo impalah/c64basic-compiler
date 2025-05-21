@@ -1,12 +1,12 @@
-from c64basic_compiler.handlers.instruction_handler import InstructionHandler
-from c64basic_compiler.utils.logging import logger
 from c64basic_compiler.evaluate import evaluate_expression
 from c64basic_compiler.exceptions import (
-    EvaluationError,
-    InvalidSyntaxError,
     CommandProcessingError,
+    EvaluationError,
     EvaluationHandlerError,
+    InvalidSyntaxError,
 )
+from c64basic_compiler.handlers.instruction_handler import InstructionHandler
+from c64basic_compiler.utils.logging import logger
 
 
 class IfHandler(InstructionHandler):

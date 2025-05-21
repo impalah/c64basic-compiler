@@ -1,15 +1,14 @@
-from enum import auto
 import re
-from typing import Union, Optional, Any, cast
+from typing import Union
 
 from c64basic_compiler.basic import FUNCTION_TABLE, Type
 from c64basic_compiler.basic.basic_function import BasicFunction
 from c64basic_compiler.exceptions import (
     EvaluationError,
-    MismatchedParenthesesError,
-    TypeMismatchError,
-    NotEnoughOperandsError,
     ExpressionReduceError,
+    MismatchedParenthesesError,
+    NotEnoughOperandsError,
+    TypeMismatchError,
     UnhandledTokenError,
 )
 from c64basic_compiler.utils.logging import logger
@@ -167,7 +166,7 @@ def tokenize(expr: str) -> list[str]:
             and result[i + 1].isdigit()
         ):
             # Create a negative number
-            final_result.append(f"-{result[i+1]}")
+            final_result.append(f"-{result[i + 1]}")
             i += 2  # Skip both tokens
         else:
             final_result.append(result[i])
@@ -377,7 +376,7 @@ def shunting_yard(tokens: list[str]) -> list[Token]:
                 stack.append("NOT")
                 expect_operand = True  # After NOT, we expect an operand
             else:
-                raise EvaluationError(f"NOT operator requires an operand")
+                raise EvaluationError("NOT operator requires an operand")
 
         # Handle other token types
         elif isinstance(token, str) and token.startswith('"') and token.endswith('"'):
@@ -455,7 +454,7 @@ def generate_pseudocode(rpn: list[Token], verbose: bool = False) -> list[str]:
     code: list[str] = []
     stack: list[Type] = []
 
-    def handle_constant(token: Union[int, float]) -> None:
+    def handle_constant(token: int | float) -> None:
         """Handle numeric constants (integers and floats)."""
         code.append(f"PUSH_CONST {token}")
         typ: Type = Type.INT if isinstance(token, int) else Type.NUM
@@ -490,7 +489,7 @@ def generate_pseudocode(rpn: list[Token], verbose: bool = False) -> list[str]:
             code.append("NEGATE")
 
             if verbose:
-                print_stack(stack, f"after NEGATE")
+                print_stack(stack, "after NEGATE")
             return
 
         if token.upper() not in FUNCTION_TABLE:
@@ -578,7 +577,7 @@ def generate_pseudocode(rpn: list[Token], verbose: bool = False) -> list[str]:
                 code.append("NEGATE")
 
                 if verbose:
-                    print_stack(stack, f"after NEGATE")
+                    print_stack(stack, "after NEGATE")
             elif token.upper() in FUNCTION_TABLE:
                 handle_function(token)
             elif token.startswith('"') and token.endswith('"'):

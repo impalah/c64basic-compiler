@@ -1,16 +1,13 @@
 import c64basic_compiler.common.basic_tokens as basic_tokens
+import c64basic_compiler.common.opcodes_6502 as opcodes
+from c64basic_compiler.common.compile_context import CompileContext
 from c64basic_compiler.common.petscii_map import PETSCII_ALL
 from c64basic_compiler.compiler.instructions_registry import get_instruction_handler
-from c64basic_compiler.common.compile_context import CompileContext
-from typing import List, Dict, Any
-
 from c64basic_compiler.handlers.instruction_handler import InstructionHandler
 from c64basic_compiler.utils.logging import logger
-import c64basic_compiler.common.opcodes_6502 as opcodes
 
 
 def generate_code(ast, ctx: CompileContext):
-
     logger.debug("Generating code...")
     code: bytearray = bytearray()
     machine_code: bytearray = bytearray()

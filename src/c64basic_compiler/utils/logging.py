@@ -1,7 +1,6 @@
 import sys
 
 from loguru import logger
-from typing import Optional
 
 LOGGER_FORMAT = "<green>{name}</green>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
 LOGGER_LEVEL = "INFO"
@@ -10,9 +9,9 @@ logger.remove()
 
 
 def configure_logger(
-    level: Optional[str] = None,
-    format: Optional[str] = None,
-    colorize: Optional[bool] = True,
+    level: str | None = None,
+    format: str | None = None,
+    colorize: bool | None = True,
 ):
     """Configure logger.
 
