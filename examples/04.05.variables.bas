@@ -1,5 +1,5 @@
 10 LET A=-1
 20 PRINT A
-30 LET D$=STR$(ABS(X * -1)) + CHR$(65)
+30 LET D$=STR$(ABS(A * -1)) + CHR$(65)
 60 PRINT D$
 100 END

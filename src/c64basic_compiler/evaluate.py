@@ -29,6 +29,11 @@ def tokenize(expr: str) -> list[str]:
     Returns:
         A list of tokens
     """
+    # Find and combine negative numbers first
+    # This captures patterns like "- 1" or "- __INT_LITERAL_0_" and combines them into "-1" or "-__INT_LITERAL_0_"
+    expr = re.sub(r"- +(__INT_LITERAL_\d+_)", r"-\1", expr)
+    expr = re.sub(r"- +(\d+)", r"-\1", expr)
+
     # First check for decimal numbers in the input and join them
     result = []
     i = 0
@@ -150,9 +155,27 @@ def tokenize(expr: str) -> list[str]:
 
         i += 1
 
+    # Before returning the tokens, perform a second pass to combine negative numbers
+    final_result = []
+    i = 0
+    while i < len(result):
+        # Check for a negative sign followed by a number
+        if (
+            i < len(result) - 1
+            and result[i] == "-"
+            and isinstance(result[i + 1], str)
+            and result[i + 1].isdigit()
+        ):
+            # Create a negative number
+            final_result.append(f"-{result[i+1]}")
+            i += 2  # Skip both tokens
+        else:
+            final_result.append(result[i])
+            i += 1
+
     logger.debug(f"Tokenize input: '{expr}'")
-    logger.debug(f"Final tokens: {result}")
-    return result
+    logger.debug(f"Final tokens: {final_result}")
+    return final_result
 
 
 # --- Conversión infijo → RPN ---
@@ -278,10 +301,20 @@ def shunting_yard(tokens: list[str]) -> list[Token]:
 
         # Handle unary operators
         if expect_operand and token == "-":
-            # This is a unary minus - add it directly to the output
-            logger.debug("Detected UNARY- operator - adding directly to output")
-            output.append("UNARY-")
-            # After unary minus we still expect an operand
+            # This is a unary minus - pushing negative one directly to output
+            logger.debug(
+                "Detected unary minus - pushing -1 and setting up for multiplication"
+            )
+            # Push a constant -1 and prepare for multiplication
+            if isinstance(tokens[i + 1], str) and tokens[i + 1].isdigit():
+                # If next token is a number, combine into a negative number
+                output.append(-int(tokens[i + 1]))
+                # Skip the next token (the number)
+                i += 1
+            else:
+                # Otherwise just push -1
+                output.append(-1)
+            expect_operand = False  # After pushing a value, we expect an operator
         else:
             # Regular binary operator processing
             token_precedence = precedence.get(token, 0)
@@ -312,6 +345,21 @@ def shunting_yard(tokens: list[str]) -> list[Token]:
 
         # Debug print
         logger.debug(f"Processing token: {token}, expect_operand: {expect_operand}")
+
+        # Special handling for negative numbers - if we see a '-' followed by a number
+        if (
+            expect_operand
+            and token == "-"
+            and i + 1 < len(tokens)
+            and (isinstance(tokens[i + 1], str) and tokens[i + 1].isdigit())
+        ):
+            # Treat this as a negative number
+            value = tokens[i + 1]
+            numeric_value = float(value) if "." in value else int(value)
+            output.append(-numeric_value)  # Push as a negative number
+            expect_operand = False  # After a number, we expect an operator
+            i += 2  # Skip the minus and the number
+            continue
 
         # Update parenthesis counter for tracking
         if token == "(":
@@ -539,7 +587,6 @@ def generate_pseudocode(rpn: list[Token], verbose: bool = False) -> list[str]:
                 handle_variable(token)
         else:
             raise UnhandledTokenError(f"Unhandled token in RPN: {token}")
-
     # Check that we've reduced to exactly one value
     if len(stack) != 1:
         raise ExpressionReduceError("Expression did not reduce to a single result")
