@@ -35,7 +35,7 @@ def tokenize(expr: str) -> list[str]:
     in_number = False
     decimal_buffer = ""
 
-    # Pre-process to handle decimal numbers properly
+    # Pre-process to handle decimal numbers properly and negative numbers
     while i < len(expr):
         # If we're building a number
         if in_number:
@@ -48,8 +48,14 @@ def tokenize(expr: str) -> list[str]:
                 decimal_buffer = ""
                 in_number = False
         else:
-            # Check if this is the start of a number
-            if expr[i].isdigit():
+            # Check if this is the start of a negative number
+            if expr[i] == "-" and i + 1 < len(expr) and expr[i + 1].isdigit():
+                # It's likely a negative number
+                in_number = True
+                decimal_buffer = "-"
+                i += 1
+            # Check if this is the start of a positive number
+            elif expr[i].isdigit():
                 in_number = True
                 decimal_buffer = expr[i]
                 i += 1
@@ -179,32 +185,55 @@ def shunting_yard(tokens: list[str]) -> list[Token]:
     output: list[Token] = []
     stack: list[str] = []
 
+    # Track if we expect an operand, to distinguish unary from binary operators
+    expect_operand = True  # Initially we expect an operand
+
     # Handler functions for different token types
     def handle_string_literal(token: str) -> None:
         """Handle string literals enclosed in quotes."""
+        nonlocal expect_operand
         output.append(token)
+        expect_operand = False  # After a string literal, we expect an operator
 
     def handle_number(token: str) -> None:
         """Convert and handle numeric tokens."""
-        numeric_value: Token = float(token) if "." in token else int(token)
+        nonlocal expect_operand
+
+        # Check if this is a negative number
+        if token.startswith("-") and len(token) > 1:
+            # It's a negative number, convert it properly
+            value = token[1:]  # Remove the negative sign
+            numeric_value: Token = float(value) if "." in value else int(value)
+            numeric_value = -numeric_value  # Make it negative
+        else:
+            # Regular number
+            numeric_value: Token = float(token) if "." in token else int(token)
+
         output.append(numeric_value)
+        expect_operand = False  # After a number, we expect an operator
 
     def handle_function(token: str) -> None:
         """Handle functions by pushing them onto stack."""
+        nonlocal expect_operand
         # Special case for no-argument functions like PI
         if token in FUNCTION_TABLE and FUNCTION_TABLE[token].arity == 0:
             # Functions with no arguments can be directly added to output
             output.append(token)
+            expect_operand = False  # After a function, we expect an operator
         else:
             # Regular functions that expect arguments are pushed to stack
             stack.append(token)
+            expect_operand = True  # After a function name, we expect operands
 
     def handle_left_paren(token: str) -> None:
         """Handle opening parentheses."""
+        nonlocal expect_operand
         stack.append(token)
+        expect_operand = True  # After an opening paren, we expect an operand
 
     def handle_right_paren(token: str) -> None:
         """Handle closing parentheses and handle mismatched cases."""
+        nonlocal expect_operand
         # Pop operators until left parenthesis
         while stack and stack[-1] != "(":
             output.append(stack.pop())
@@ -222,8 +251,12 @@ def shunting_yard(tokens: list[str]) -> list[Token]:
         if stack and stack[-1] in FUNCTION_TABLE:
             output.append(stack.pop())
 
+        expect_operand = False  # After a closing paren, we expect an operator
+
     def handle_operator(token: str) -> None:
         """Handle operators with proper precedence."""
+        nonlocal expect_operand
+
         # Define operator precedence (higher means higher precedence)
         precedence = {
             "OR": 1,
@@ -237,26 +270,38 @@ def shunting_yard(tokens: list[str]) -> list[Token]:
             "<>": 4,
             "+": 5,
             "-": 5,
+            "UNARY-": 8,  # Unary minus has higher precedence
             "*": 6,
             "/": 6,
             "^": 7,
         }
 
-        token_precedence = precedence.get(token, 0)
+        # Handle unary operators
+        if expect_operand and token == "-":
+            # This is a unary minus - add it directly to the output
+            logger.debug("Detected UNARY- operator - adding directly to output")
+            output.append("UNARY-")
+            # After unary minus we still expect an operand
+        else:
+            # Regular binary operator processing
+            token_precedence = precedence.get(token, 0)
 
-        # While there's an operator with higher or equal precedence on the stack
-        while (
-            stack
-            and stack[-1] in precedence
-            and precedence.get(stack[-1], 0) >= token_precedence
-        ):
-            output.append(stack.pop())
+            # While there's an operator with higher or equal precedence on the stack
+            while (
+                stack
+                and stack[-1] in precedence
+                and precedence.get(stack[-1], 0) >= token_precedence
+            ):
+                output.append(stack.pop())
 
-        stack.append(token)
+            stack.append(token)
+            expect_operand = True  # After a binary operator, we expect an operand
 
     def handle_variable(token: str) -> None:
         """Handle variable names."""
+        nonlocal expect_operand
         output.append(token)
+        expect_operand = False  # After a variable, we expect an operator
 
     # Process each token
     i = 0
@@ -264,10 +309,9 @@ def shunting_yard(tokens: list[str]) -> list[Token]:
 
     while i < len(tokens):
         token = tokens[i]
-        # upper_token = token.upper() if isinstance(token, str) else token
 
         # Debug print
-        logger.debug(f"Processing token: {token}")
+        logger.debug(f"Processing token: {token}, expect_operand: {expect_operand}")
 
         # Update parenthesis counter for tracking
         if token == "(":
@@ -283,6 +327,7 @@ def shunting_yard(tokens: list[str]) -> list[Token]:
             if i + 1 < len(tokens):
                 # Push NOT onto the stack
                 stack.append("NOT")
+                expect_operand = True  # After NOT, we expect an operand
             else:
                 raise EvaluationError(f"NOT operator requires an operand")
 
@@ -292,7 +337,7 @@ def shunting_yard(tokens: list[str]) -> list[Token]:
         elif isinstance(token, str) and re.fullmatch(r"-?\d+\.\d+|-?\d+", token):
             handle_number(token)
         elif isinstance(token, str) and token.upper() in FUNCTION_TABLE:
-            handle_function(token)
+            handle_function(token.upper())
         elif token == "(":
             handle_left_paren(token)
         elif token == ")":
@@ -375,6 +420,31 @@ def generate_pseudocode(rpn: list[Token], verbose: bool = False) -> list[str]:
         # Debug output
         logger.debug(f"Handling function/operator: {token}")
 
+        # Special handling for unary minus
+        if token == "UNARY-":
+            # Unary minus only requires one operand
+            if len(stack) < 1:
+                raise NotEnoughOperandsError(
+                    f"Not enough operands for unary minus. Need 1, have {len(stack)}"
+                )
+
+            # Get the operand type
+            arg_type = stack.pop()
+
+            # Check if it's a numeric type
+            if arg_type not in [Type.NUM, Type.INT]:
+                raise TypeMismatchError(
+                    f"TYPE MISMATCH in unary minus: got {arg_type.name}, need numeric type"
+                )
+
+            # Push the same type back
+            stack.append(arg_type)
+            code.append("NEGATE")
+
+            if verbose:
+                print_stack(stack, f"after NEGATE")
+            return
+
         if token.upper() not in FUNCTION_TABLE:
             logger.error(f"WARNING: Function {token} not found in FUNCTION_TABLE!")
             logger.error(f"Available functions: {list(FUNCTION_TABLE.keys())}")
@@ -439,8 +509,29 @@ def generate_pseudocode(rpn: list[Token], verbose: bool = False) -> list[str]:
         if isinstance(token, (int, float)):
             handle_constant(token)
         elif isinstance(token, str):
-            # upper_token: str = token.upper()
-            if token.upper() in FUNCTION_TABLE:
+            if token == "UNARY-":
+                # Special handling for unary minus
+                if len(stack) < 1:
+                    raise NotEnoughOperandsError(
+                        f"Not enough operands for unary minus. Need 1, have {len(stack)}"
+                    )
+
+                # Get the operand type
+                arg_type = stack.pop()
+
+                # Check if it's a numeric type
+                if arg_type not in [Type.NUM, Type.INT]:
+                    raise TypeMismatchError(
+                        f"TYPE MISMATCH in unary minus: got {arg_type.name}, need numeric type"
+                    )
+
+                # Push the same type back
+                stack.append(arg_type)
+                code.append("NEGATE")
+
+                if verbose:
+                    print_stack(stack, f"after NEGATE")
+            elif token.upper() in FUNCTION_TABLE:
                 handle_function(token)
             elif token.startswith('"') and token.endswith('"'):
                 handle_string_literal(token)

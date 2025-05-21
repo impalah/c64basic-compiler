@@ -135,3 +135,28 @@ class PowerOperator(BasicFunction):
     arity = 2
     arg_types = [Type.NUM, Type.NUM]
     return_type = Type.NUM
+
+
+class UnaryMinusOperator(BasicFunction):
+    """
+    Implements the BASIC unary minus operator.
+
+    Negates a numeric value.
+
+    Args:
+        x: Numeric value
+
+    Returns:
+        Negated value of x
+
+    Examples:
+        -5 = -5
+        -(3) = -3
+    """
+
+    name = "UNARY-"
+    alias = "NEGATE"
+    mnemonic = "NEGATE"
+    arity = 1
+    arg_types = [Type.NUM]
+    return_type = Type.NUM

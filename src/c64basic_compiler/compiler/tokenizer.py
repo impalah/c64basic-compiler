@@ -10,13 +10,9 @@ def tokenize(source: str) -> list[tuple[int, list[str]]]:
     """
     import re
 
-    # Updated regex pattern to handle decimal numbers as single tokens
-    # The order of these patterns is important:
-    # 1. String literals: "anything"
-    # 2. Decimal numbers: 3.14, 0.5, etc.
-    # 3. Variable names with dollar sign: A$, NAME$, etc.
-    # 4. Other tokens: words, operators, etc.
-    token_pattern = r'("[^"]*"|\d+\.\d+|\w+\$?|\=|[^\s:])'
+    # Updated regex pattern to better handle negative numbers
+    # The order is important: we need to detect negative numbers before other tokens
+    token_pattern = r'("[^"]*"|-\d+\.\d+|-\d+|\d+\.\d+|\d+|\w+\$?|\=|[^\s:])'
 
     lines = source.strip().splitlines()
     result = []
@@ -96,6 +92,22 @@ def tokenize_line(line: str) -> list[str]:
         if in_quotes:
             quote_buffer += char
             i += 1
+            continue
+
+        # Handle negative numbers specially
+        if (
+            char == "-"
+            and i + 1 < len(line)
+            and line[i + 1].isdigit()
+            and token_buffer == ""
+        ):
+            number_buffer = char  # Start with the negative sign
+            i += 1
+            # Add the digits and possibly a decimal point
+            while i < len(line) and (line[i].isdigit() or line[i] == "."):
+                number_buffer += line[i]
+                i += 1
+            tokens.append(number_buffer)  # Add the complete negative number
             continue
 
         # Handle decimal numbers
