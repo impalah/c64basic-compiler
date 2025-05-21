@@ -40,7 +40,7 @@ def _build_function_table() -> Dict[str, BasicFunction]:
                 ):
                     function_table[obj.name] = obj()
 
-                    print(f"Registered function: {obj.name}")
+                    # print(f"Registered function: {obj.name}")
 
     return function_table
 
